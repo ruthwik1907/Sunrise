@@ -131,7 +131,7 @@ export default function Home() {
       <div className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Why Choose MediCare?</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Why Choose Sunrise Hospital?</h2>
             <p className="text-lg text-slate-600">We combine medical expertise with modern technology to provide you with the best healthcare experience possible.</p>
           </div>
           
@@ -210,7 +210,7 @@ export default function Home() {
             <Heart className="w-10 h-10 text-indigo-400" />
           </div>
           <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">Ready to prioritize your health?</h2>
-          <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">Join thousands of patients who trust MediCare for their healthcare needs. Create an account today to manage your appointments, records, and more.</p>
+          <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">Join thousands of patients who trust Sunrise Hospital for their healthcare needs. Create an account today to manage your appointments, records, and more.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link to="/register" className="inline-flex justify-center items-center px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-slate-900 bg-white hover:bg-slate-50 shadow-lg hover:shadow-xl transition-all">
               Create Patient Account

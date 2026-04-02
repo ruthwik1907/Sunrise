@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
-import { Activity, LogOut, User as UserIcon, Menu, X } from 'lucide-react';
+import { LogOut, User as UserIcon, Menu, X } from 'lucide-react';
 
 export const Navbar = () => {
   const { currentUser, logout } = useAppContext();
@@ -22,17 +22,17 @@ export const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="flex items-center gap-2 text-indigo-600" onClick={closeMenu}>
-              <Activity className="h-8 w-8" />
-              <span className="font-bold text-xl tracking-tight text-slate-900">MediCare</span>
+              <img src="/images/logo.png" alt="Sunrise Hospital Logo" className="h-10 w-auto" />
+              <span className="font-bold text-xl tracking-tight text-slate-900">Sunrise Hospital</span>
             </Link>
           </div>
-          
+
           <div className="hidden md:flex flex-1 justify-center space-x-8">
             <Link to="/" className="border-transparent text-slate-500 hover:border-indigo-500 hover:text-indigo-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Home</Link>
             <Link to="/about" className="border-transparent text-slate-500 hover:border-indigo-500 hover:text-indigo-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">About / Departments</Link>
             <Link to="/doctors" className="border-transparent text-slate-500 hover:border-indigo-500 hover:text-indigo-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">Doctors Directory</Link>
           </div>
-          
+
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
             {!currentUser ? (

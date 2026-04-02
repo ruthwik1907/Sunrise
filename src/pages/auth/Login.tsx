@@ -77,7 +77,7 @@ export default function Login() {
           <div className="bg-indigo-600 p-2 rounded-xl">
             <Activity className="h-8 w-8 text-white" />
           </div>
-          <span className="text-2xl font-extrabold tracking-tight text-slate-900">MediCare</span>
+          <span className="text-2xl font-extrabold tracking-tight text-slate-900">Sunrise Hospital</span>
         </Link>
         <h2 className="mt-2 text-center text-3xl font-extrabold text-slate-900 tracking-tight">Welcome back</h2>
         <p className="mt-2 text-center text-sm text-slate-600">

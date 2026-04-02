@@ -14,7 +14,7 @@ export default function AdminReports() {
     // Title
     doc.setFontSize(20);
     doc.setTextColor(79, 70, 229); // Indigo color
-    doc.text('MediCare Analytics Report', 20, 30);
+    doc.text('Sunrise Hospital Analytics Report', 20, 30);
     
     // Date
     doc.setFontSize(12);
@@ -77,7 +77,7 @@ export default function AdminReports() {
     });
     
     // Save the PDF
-    doc.save('medicare-analytics-report.pdf');
+    doc.save('Sunrise Hospital-analytics-report.pdf');
   };
 
   // Prepare data for Appointments by Status chart

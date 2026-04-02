@@ -7,9 +7,9 @@ const renderWithRouter = (component: React.ReactElement) => {
 };
 
 describe('Footer', () => {
-  it('renders the MediCare brand', () => {
+  it('renders the Sunrise Hospital brand', () => {
     renderWithRouter(<Footer />);
-    expect(screen.getByText('MediCare')).toBeInTheDocument();
+    expect(screen.getByText('Sunrise Hospital')).toBeInTheDocument();
   });
 
   it('renders quick links', () => {
@@ -28,6 +28,6 @@ describe('Footer', () => {
   it('renders contact information', () => {
     renderWithRouter(<Footer />);
     expect(screen.getByText('Contact Us')).toBeInTheDocument();
-    expect(screen.getByText('info@medicare.com')).toBeInTheDocument();
+    expect(screen.getByText('info@Sunrise Hospital.com')).toBeInTheDocument();
   });
 });

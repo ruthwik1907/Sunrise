@@ -164,7 +164,7 @@ export default function DoctorPatientProfile() {
       const finalY = rx.notes ? (90 + (splitText.length * 5) + 10 + 10 + (doc.splitTextToSize(rx.notes, 180).length * 5)) : (90 + (splitText.length * 5));
       doc.setFontSize(10);
       doc.setTextColor(100, 116, 139);
-      doc.text('This is a digitally generated prescription from MediCare.', 14, finalY + 20);
+      doc.text('This is a digitally generated prescription from Sunrise Hospital.', 14, finalY + 20);
       
       doc.save(`Prescription_${patient.name}_${new Date(rx.date).getTime()}.pdf`);
       toast.success('Prescription downloaded successfully');

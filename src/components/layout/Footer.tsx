@@ -11,7 +11,7 @@ export const Footer = () => {
           <div className="col-span-1 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 text-indigo-400 mb-4">
               <Activity className="h-8 w-8" />
-              <span className="font-bold text-xl tracking-tight text-white">MediCare</span>
+              <span className="font-bold text-xl tracking-tight text-white">Sunrise Hospital</span>
             </Link>
             <p className="text-sm text-slate-400 mb-6">
               Providing world-class healthcare services with advanced technology and compassionate care. Your health is our priority.
@@ -62,14 +62,14 @@ export const Footer = () => {
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-indigo-400 shrink-0" />
-                <span>contact@medicare.com</span>
+                <span>contact@Sunrise Hospital.com</span>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
-          <p>&copy; {new Date().getFullYear()} MediCare Hospital Management System. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Sunrise Hospital Hospital Management System. All rights reserved.</p>
         </div>
       </div>
     </footer>
