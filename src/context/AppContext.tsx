@@ -120,15 +120,20 @@ export interface Prescription {
 export interface InvoiceItem {
   id: string;
   description: string;
-  amount: number;
+  amount: number; // Base amount before tax
   type: 'consultation' | 'lab_test' | 'medication' | 'procedure' | 'other';
+  taxRate: number; // e.g., 18 for 18%
+  taxAmount: number;
+  hsnSacCode?: string;
 }
 
 export interface Invoice {
   id: string;
   patientId: string;
   appointmentId?: string;
-  amount: number;
+  amount: number; // Total amount including tax
+  subtotal: number; // Total amount before tax
+  totalTaxAmount: number;
   date: string;
   dueDate: string;
   status: 'paid' | 'unpaid' | 'partial' | 'cancelled';
@@ -136,6 +141,7 @@ export interface Invoice {
   items: InvoiceItem[];
   paymentMethod?: 'cash' | 'card' | 'upi' | 'insurance';
   transactionId?: string;
+  gstNumber?: string; // Hospital's GST number for this invoice
 }
 
 export interface LabRequest {
@@ -580,20 +586,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     // 2. Deduct stock for each dispensed item and build invoice line items
     const invoiceItems: InvoiceItem[] = [];
-    let totalAmount = 0;
+    let subtotal = 0;
+    let totalTaxAmount = 0;
 
     for (const dispensed of dispensedItems) {
       const item = inventory.find(i => i.id === dispensed.inventoryItemId);
       if (!item) continue;
       const newStock = item.stock - dispensed.quantity;
       await updateDoc(doc(db, 'inventory', item.id), { stock: newStock });
-      const lineTotal = item.unitPrice * dispensed.quantity;
-      totalAmount += lineTotal;
+      
+      const itemBaseAmount = item.unitPrice * dispensed.quantity;
+      const taxRate = 18; // Default 18% GST for medications
+      const taxAmount = (itemBaseAmount * taxRate) / 100;
+      
+      subtotal += itemBaseAmount;
+      totalTaxAmount += taxAmount;
+      
       invoiceItems.push({
-        id: `${item.id}_${Date.now()}`,
+        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         description: `${item.name} x${dispensed.quantity}`,
-        amount: lineTotal,
+        amount: itemBaseAmount,
         type: 'medication',
+        taxRate,
+        taxAmount,
+        hsnSacCode: '3004', // Generic HSN for medications
       });
     }
 
@@ -601,16 +617,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (invoiceItems.length > 0) {
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 7);
-      const newInvoice: Omit<Invoice, 'id' | 'status'> = {
+      const amount = subtotal + totalTaxAmount;
+      
+      const newInvoice: Omit<Invoice, 'id'> = {
         patientId: rx.patientId,
         appointmentId: rx.appointmentId,
-        amount: totalAmount,
+        subtotal,
+        totalTaxAmount,
+        amount,
         date: new Date().toISOString().split('T')[0],
         dueDate: dueDate.toISOString().split('T')[0],
+        status: 'unpaid',
         description: `Pharmacy — Prescription #${id.substring(0, 8).toUpperCase()}`,
         items: invoiceItems,
+        gstNumber: '29AAAAA0000A1Z5',
       };
-      await addDoc(collection(db, 'invoices'), { ...newInvoice, status: 'unpaid' });
+      await addDoc(collection(db, 'invoices'), newInvoice);
     }
 
     // 4. Mark prescription as dispensed
@@ -802,9 +824,39 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await addDoc(collection(db, 'departments'), data);
   };
 
-  const generateInvoice = async (data: Omit<Invoice, 'id' | 'status'>) => {
-    const newInvoice = { ...data, status: 'unpaid' };
-    await addDoc(collection(db, 'invoices'), newInvoice);
+  const generateInvoice = async (data: Omit<Invoice, 'id' | 'status' | 'amount' | 'subtotal' | 'totalTaxAmount'> & { items: Omit<InvoiceItem, 'id' | 'taxAmount'>[] }) => {
+    try {
+      const itemsWithTax = data.items.map(item => {
+        const taxRate = item.taxRate || 18; // Default 18% GST
+        const taxAmount = (item.amount * taxRate) / 100;
+        return {
+          ...item,
+          id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          taxRate,
+          taxAmount,
+        } as InvoiceItem;
+      });
+
+      const subtotal = itemsWithTax.reduce((sum, item) => sum + item.amount, 0);
+      const totalTaxAmount = itemsWithTax.reduce((sum, item) => sum + item.taxAmount, 0);
+      const amount = subtotal + totalTaxAmount;
+
+      const newInvoice: Omit<Invoice, 'id'> = {
+        ...data,
+        items: itemsWithTax,
+        subtotal,
+        totalTaxAmount,
+        amount,
+        status: 'unpaid',
+        gstNumber: '29AAAAA0000A1Z5', // Mock Hospital GST
+      };
+
+      await addDoc(collection(db, 'invoices'), newInvoice);
+      toast.success('Invoice generated successfully');
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+      toast.error('Failed to generate invoice');
+    }
   };
 
   const payInvoice = async (id: string, method: Invoice['paymentMethod'], transactionId?: string) => {

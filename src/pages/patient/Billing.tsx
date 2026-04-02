@@ -71,12 +71,15 @@ export default function PatientBilling() {
       if (currentUser.phone) doc.text(currentUser.phone, 14, 75);
       
       // Items Table
-      const tableColumn = ["Description", "Type", "Amount"];
-      const tableRows = invoice.items?.map((item: any) => [
+      const tableColumn = ["Description", "Type", "Base Amount", "GST %", "GST Amt", "Total"];
+      const tableRows = (invoice.items || []).map((item: any) => [
         item.description,
-        item.type,
-        `$${item.amount.toFixed(2)}`
-      ]) || [['Consultation Fee', 'consultation', `$${invoice.amount.toFixed(2)}`]];
+        item.type.replace('_', ' '),
+        `₹${(item.amount || 0).toFixed(2)}`,
+        `${item.taxRate || 0}%`,
+        `₹${(item.taxAmount || 0).toFixed(2)}`,
+        `₹${((item.amount || 0) + (item.taxAmount || 0)).toFixed(2)}`
+      ]);
       
       (doc as any).autoTable({
         startY: 85,
@@ -84,21 +87,28 @@ export default function PatientBilling() {
         body: tableRows,
         theme: 'striped',
         headStyles: { fillColor: [79, 70, 229] }, // Indigo-600
-        styles: { fontSize: 10, cellPadding: 5 },
+        styles: { fontSize: 8, cellPadding: 3 },
       });
       
       // Total
       const finalY = (doc as any).lastAutoTable.finalY || 85;
-      doc.setFontSize(12);
-      doc.setTextColor(15, 23, 42);
-      doc.text(`Total Amount: $${invoice.amount.toFixed(2)}`, 14, finalY + 15);
-      
-      // Footer
       doc.setFontSize(10);
       doc.setTextColor(100, 116, 139);
-      doc.text('Thank you for your business.', 14, finalY + 35);
+      doc.text(`Subtotal: ₹${(invoice.subtotal || invoice.amount).toFixed(2)}`, 140, finalY + 10);
+      doc.text(`GST (18%): ₹${(invoice.totalTaxAmount || 0).toFixed(2)}`, 140, finalY + 16);
+      doc.setFontSize(12);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`Total Amount: ₹${invoice.amount.toFixed(2)}`, 140, finalY + 26);
       
-      doc.save(`Invoice_${invoice.id}.pdf`);
+      // Footer
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`GSTIN: ${invoice.gstNumber || '29AAAAA0000A1Z5'}`, 14, finalY + 26);
+      doc.setFontSize(10);
+      doc.setTextColor(148, 163, 184);
+      doc.text('Thank you for choosing Sunrise Hospital.', 105, 280, { align: 'center' });
+      
+      doc.save(`Invoice_${invoice.id.substring(0, 8)}.pdf`);
       toast.success('Invoice downloaded successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -129,7 +139,7 @@ export default function PatientBilling() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Total Outstanding</p>
-            <p className="text-2xl font-bold text-slate-900">${totalUnpaid.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-slate-900">₹{totalUnpaid.toFixed(2)}</p>
           </div>
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
@@ -139,7 +149,7 @@ export default function PatientBilling() {
           <div>
             <p className="text-sm font-medium text-slate-500">Total Paid</p>
             <p className="text-2xl font-bold text-slate-900">
-              ${myInvoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0).toFixed(2)}
+              ₹{myInvoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + i.amount, 0).toFixed(2)}
             </p>
           </div>
         </div>
@@ -238,7 +248,7 @@ export default function PatientBilling() {
                         </button>
                         <button
                           onClick={() => downloadInvoicePDF(invoice)}
-                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors group-hover:opacity-100"
                           title="Download PDF"
                         >
                           <Download className="h-4 w-4" />
@@ -246,14 +256,14 @@ export default function PatientBilling() {
                         {invoice.status === 'unpaid' ? (
                           <button
                             onClick={() => payInvoice(invoice.id, 'cash')}
-                            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors"
+                            className="inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors whitespace-nowrap"
                           >
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            Pay Now
+                            <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                            Pay
                           </button>
                         ) : (
-                          <span className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg">
-                            <CheckCircle className="h-4 w-4 mr-2" />
+                          <span className="inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-lg">
+                            <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
                             Paid
                           </span>
                         )}
@@ -263,31 +273,44 @@ export default function PatientBilling() {
                   {expandedId === invoice.id && invoice.items && invoice.items.length > 0 && (
                     <tr>
                       <td colSpan={5} className="px-6 pb-4 bg-slate-50">
-                        <div className="rounded-xl border border-slate-200 overflow-hidden">
-                          <table className="min-w-full divide-y divide-slate-100">
-                            <thead className="bg-white">
-                              <tr>
-                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Item</th>
-                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Type</th>
-                                <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-500">Amount</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 bg-white">
-                              {invoice.items.map((item: any) => (
-                                <tr key={item.id}>
-                                  <td className="px-4 py-2.5 text-sm text-slate-900">{item.description}</td>
-                                  <td className="px-4 py-2.5 text-xs text-slate-500 capitalize">{item.type.replace('_', ' ')}</td>
-                                  <td className="px-4 py-2.5 text-sm font-medium text-slate-900 text-right">₹{item.amount.toFixed(2)}</td>
+                        <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-slate-100">
+                              <thead className="bg-white">
+                                <tr>
+                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Item</th>
+                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Base Price</th>
+                                  <th className="px-4 py-2.5 text-center text-xs font-semibold text-slate-500">GST %</th>
+                                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-500">GST Amt</th>
+                                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-500">Total</th>
                                 </tr>
-                              ))}
-                            </tbody>
-                            <tfoot className="bg-slate-50">
-                              <tr>
-                                <td colSpan={2} className="px-4 py-2.5 text-sm font-bold text-slate-900">Total</td>
-                                <td className="px-4 py-2.5 text-sm font-bold text-slate-900 text-right">₹{invoice.amount.toFixed(2)}</td>
-                              </tr>
-                            </tfoot>
-                          </table>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 bg-white">
+                                {(invoice.items || []).map((item: any) => (
+                                  <tr key={item.id}>
+                                    <td className="px-4 py-2.5 text-sm text-slate-900">{item.description}</td>
+                                    <td className="px-4 py-2.5 text-sm text-slate-900">₹{(item.amount || 0).toFixed(2)}</td>
+                                    <td className="px-4 py-2.5 text-xs text-slate-500 text-center">{item.taxRate || 0}%</td>
+                                    <td className="px-4 py-2.5 text-sm text-slate-900 text-right">₹{(item.taxAmount || 0).toFixed(2)}</td>
+                                    <td className="px-4 py-2.5 text-sm font-bold text-slate-900 text-right">₹{((item.amount || 0) + (item.taxAmount || 0)).toFixed(2)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot className="bg-indigo-50/30">
+                                <tr>
+                                  <td colSpan={1} className="px-4 py-2 text-xs font-bold text-slate-500 uppercase">Summary</td>
+                                  <td className="px-4 py-2 text-sm text-slate-900">₹{(invoice.subtotal || invoice.amount).toFixed(2)}</td>
+                                  <td className="px-4 py-2 text-center text-slate-400">—</td>
+                                  <td className="px-4 py-2 text-sm text-slate-900 text-right">₹{(invoice.totalTaxAmount || 0).toFixed(2)}</td>
+                                  <td className="px-4 py-2 text-sm font-black text-indigo-700 text-right">₹{invoice.amount.toFixed(2)}</td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                          <div className="p-3 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400 uppercase tracking-widest bg-slate-50/50">
+                            <span>Hospital GSTIN: {invoice.gstNumber || '29AAAAA0000A1Z5'}</span>
+                            <span className="font-medium text-slate-500">Verified & Tax Compliant</span>
+                          </div>
                         </div>
                       </td>
                     </tr>

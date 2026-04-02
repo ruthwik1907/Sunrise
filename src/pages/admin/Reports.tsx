@@ -27,26 +27,30 @@ export default function AdminReports() {
     doc.text('Summary Statistics', 20, 65);
     
     const totalAppointments = appointments.length;
-    const totalRevenue = invoices.reduce((sum, inv) => sum + inv.amount, 0);
+    const totalTransactions = invoices.reduce((sum, inv) => sum + inv.amount, 0);
+    const totalTax = invoices.reduce((sum, inv) => sum + (inv.totalTaxAmount || 0), 0);
+    const subtotal = totalTransactions - totalTax;
     const totalDoctors = users.filter(u => u.role === 'doctor').length;
     const totalPatients = users.filter(u => u.role === 'patient').length;
     
     doc.setFontSize(12);
     doc.setTextColor(71, 85, 105);
     doc.text(`Total Appointments: ${totalAppointments}`, 20, 80);
-    doc.text(`Total Revenue: $${totalRevenue.toLocaleString()}`, 20, 90);
-    doc.text(`Total Doctors: ${totalDoctors}`, 20, 100);
-    doc.text(`Total Patients: ${totalPatients}`, 20, 110);
+    doc.text(`Total Revenue (Gross): ₹${totalTransactions.toLocaleString('en-IN')}`, 20, 90);
+    doc.text(`Total Tax Collected: ₹${totalTax.toLocaleString('en-IN')}`, 20, 100);
+    doc.text(`Net Revenue: ₹${subtotal.toLocaleString('en-IN')}`, 20, 110);
+    doc.text(`Total Doctors: ${totalDoctors}`, 20, 120);
+    doc.text(`Total Patients: ${totalPatients}`, 20, 130);
     
     // Appointments by Status
     doc.setFontSize(16);
     doc.setTextColor(15, 23, 42);
-    doc.text('Appointments by Status', 20, 130);
+    doc.text('Appointments by Status', 20, 150);
     
     const statusTableData = statusData.map(item => [item.name, item.value.toString()]);
     
     (doc as any).autoTable({
-      startY: 140,
+      startY: 160,
       head: [['Status', 'Count']],
       body: statusTableData,
       theme: 'grid',
@@ -55,12 +59,12 @@ export default function AdminReports() {
     });
     
     // Revenue by Department
-    const deptRevenue = departments.map(dept => {
+    const deptRevenueTable = departments.map(dept => {
       const deptInvoices = invoices.filter(inv => 
         appointments.find(apt => apt.id === inv.appointmentId)?.departmentId === dept.id
       );
       const revenue = deptInvoices.reduce((sum, inv) => sum + inv.amount, 0);
-      return [dept.name, `$${revenue.toLocaleString()}`];
+      return [dept.name, `₹${revenue.toLocaleString('en-IN')}`];
     });
     
     doc.setFontSize(16);
@@ -70,7 +74,7 @@ export default function AdminReports() {
     (doc as any).autoTable({
       startY: (doc as any).lastAutoTable.finalY + 30,
       head: [['Department', 'Revenue']],
-      body: deptRevenue,
+      body: deptRevenueTable,
       theme: 'grid',
       headStyles: { fillColor: [79, 70, 229] },
       styles: { fontSize: 10 }
@@ -135,7 +139,11 @@ export default function AdminReports() {
       .filter(inv => inv.status === 'paid' && inv.date.startsWith(yearMonth))
       .reduce((sum, inv) => sum + inv.amount, 0);
       
-    return { month: monthStr, revenue };
+    const tax = invoices
+      .filter(inv => inv.status === 'paid' && inv.date.startsWith(yearMonth))
+      .reduce((sum, inv) => sum + (inv.totalTaxAmount || 0), 0);
+      
+    return { month: monthStr, revenue, tax };
   });
 
   return (
@@ -180,12 +188,13 @@ export default function AdminReports() {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                <YAxis tickFormatter={(value) => `$${value / 1000}k`} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dx={-10} />
+                <YAxis tickFormatter={(value) => `₹${value / 1000}k`} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dx={-10} />
                 <Tooltip 
-                  formatter={(value: any) => value ? [`$${Number(value).toLocaleString()}`, 'Revenue'] : ['N/A', 'Revenue']}
+                  formatter={(value: any) => value ? [`₹${Number(value).toLocaleString('en-IN')}`, 'Revenue'] : ['N/A', 'Revenue']}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="#4f46e5" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                <Area type="monotone" dataKey="tax" stroke="#f59e0b" strokeWidth={2} fillOpacity={0.1} fill="#f59e0b" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -266,10 +275,10 @@ export default function AdminReports() {
                 layout="vertical"
               >
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                <XAxis type="number" tickFormatter={(value) => `$${value / 1000}k`} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <XAxis type="number" tickFormatter={(value) => `₹${value / 1000}k`} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                 <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} width={100} />
                 <Tooltip 
-                  formatter={(value: any) => value ? [`$${Number(value).toLocaleString()}`, 'Revenue'] : ['N/A', 'Revenue']}
+                  formatter={(value: any) => value ? [`₹${Number(value).toLocaleString('en-IN')}`, 'Revenue'] : ['N/A', 'Revenue']}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
                   cursor={{ fill: '#f1f5f9' }}
                 />

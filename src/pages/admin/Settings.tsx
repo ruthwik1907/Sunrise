@@ -47,46 +47,46 @@ export default function AdminSettings() {
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col md:flex-row min-h-[600px]">
         {/* Sidebar Navigation */}
-        <div className="w-full md:w-64 bg-slate-50/50 border-r border-slate-100 p-4 flex flex-col gap-1">
+        <div className="w-full md:w-64 bg-slate-50/50 border-r border-slate-100 p-4 flex flex-row md:flex-col gap-1 overflow-x-auto no-scrollbar scroll-smooth">
           <button
             onClick={() => setActiveTab('general')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
               activeTab === 'general' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100/50' 
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <Building className={`h-5 w-5 ${activeTab === 'general' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            General Settings
+            General
           </button>
           
           <button
             onClick={() => setActiveTab('security')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
               activeTab === 'security' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100/50' 
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <Shield className={`h-5 w-5 ${activeTab === 'security' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            Security & Access
+            Security
           </button>
 
           <button
             onClick={() => setActiveTab('notifications')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
               activeTab === 'notifications' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100/50' 
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <Bell className={`h-5 w-5 ${activeTab === 'notifications' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            System Notifications
+            Notifications
           </button>
 
           <button
             onClick={() => setActiveTab('integrations')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
               activeTab === 'integrations' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100/50' 
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -98,26 +98,26 @@ export default function AdminSettings() {
           
           <button
             onClick={() => setActiveTab('admins')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
               activeTab === 'admins' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100/50' 
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <Users className={`h-5 w-5 ${activeTab === 'admins' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            Admin Management
+            Admins
           </button>
           
           <button
             onClick={() => setActiveTab('database')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
               activeTab === 'database' 
                 ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100/50' 
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             <Database className={`h-5 w-5 ${activeTab === 'database' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            Database & Backups
+            Database
           </button>
         </div>
 
@@ -389,7 +389,8 @@ export default function AdminSettings() {
               )}
 
               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-                <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[600px]">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
                       <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Admin</th>
@@ -439,6 +440,7 @@ export default function AdminSettings() {
                     )}
                   </tbody>
                 </table>
+                </div>
               </div>
             </div>
           )}

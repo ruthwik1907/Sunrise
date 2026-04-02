@@ -674,13 +674,28 @@ export default function PharmacistDashboard() {
                 })}
               </div>
               {dispenseSelections.some(sel => sel.inventoryItemId) && (
-                <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm">
-                  <div className="flex justify-between font-bold text-slate-900">
-                    <span>Total Invoice Amount:</span>
+                <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-sm space-y-1">
+                  <div className="flex justify-between text-slate-500">
+                    <span>Subtotal:</span>
                     <span>₹{dispenseSelections.reduce((total, sel) => {
                       const item = inventory.find(i => i.id === sel.inventoryItemId);
                       return total + (item ? item.unitPrice * sel.quantity : 0);
                     }, 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-500">
+                    <span>GST (18%):</span>
+                    <span>₹{(dispenseSelections.reduce((total, sel) => {
+                      const item = inventory.find(i => i.id === sel.inventoryItemId);
+                      return total + (item ? (item.unitPrice * sel.quantity * 18) / 100 : 0);
+                    }, 0)).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-indigo-700 pt-1 border-t border-slate-200">
+                    <span>Total Amount (Incl. GST):</span>
+                    <span>₹{(dispenseSelections.reduce((total, sel) => {
+                      const item = inventory.find(i => i.id === sel.inventoryItemId);
+                      const base = item ? item.unitPrice * sel.quantity : 0;
+                      return total + base + (base * 18) / 100;
+                    }, 0)).toFixed(2)}</span>
                   </div>
                 </div>
               )}
