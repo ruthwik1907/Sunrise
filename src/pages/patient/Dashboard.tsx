@@ -58,7 +58,7 @@ export default function PatientDashboard() {
       const finalY = 85 + (splitText.length * 5);
       doc.setFontSize(10);
       doc.setTextColor(100, 116, 139);
-      doc.text('This is a digitally generated prescription from MediCare.', 14, finalY + 20);
+      doc.text('This is a digitally generated prescription from Sunrise Hospital.', 14, finalY + 20);
       
       doc.save(`Prescription_${new Date(rx.date).getTime()}.pdf`);
       toast.success('Prescription downloaded successfully');
