@@ -86,7 +86,7 @@ export default function AdminDashboard() {
             </span>
           </div>
           <div>
-            <p className="text-2xl font-bold text-slate-900">${totalRevenue.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-slate-900">₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</p>
             <p className="text-sm font-medium text-slate-500">Total Revenue</p>
           </div>
         </div>
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-slate-500 font-medium">Collected Revenue</span>
-                  <span className="text-slate-900 font-bold">${totalRevenue.toFixed(2)}</span>
+                  <span className="text-slate-900 font-bold">₹{totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2">
                   <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '75%' }}></div>
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
               <div>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-slate-500 font-medium">Pending Payments</span>
-                  <span className="text-slate-900 font-bold">${pendingRevenue.toFixed(2)}</span>
+                  <span className="text-slate-900 font-bold">₹{pendingRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2">
                   <div className="bg-amber-500 h-2 rounded-full" style={{ width: '25%' }}></div>

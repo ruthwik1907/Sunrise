@@ -84,22 +84,31 @@ export default function AdminInvoices() {
     doc.setFontSize(10); doc.setTextColor(100, 116, 139);
     doc.text(`Patient: ${patient?.name || 'Unknown'}`, 140, 42);
     doc.text(`Email: ${patient?.email || 'N/A'}`, 140, 49);
-    const tableColumn = ['Description', 'Type', 'Amount'];
+    const tableColumn = ['Description', 'Type', 'Amount', 'GST %', 'GST Amt', 'Total'];
     const tableRows = invoice.items.map((item: any) => [
       item.description,
       item.type.charAt(0).toUpperCase() + item.type.slice(1).replace('_', ' '),
-      `₹${item.amount.toFixed(2)}`
+      `₹${(item.amount || 0).toFixed(2)}`,
+      `${item.taxRate || 0}%`,
+      `₹${(item.taxAmount || 0).toFixed(2)}`,
+      `₹${((item.amount || 0) + (item.taxAmount || 0)).toFixed(2)}`
     ]);
     (doc as any).autoTable({
       startY: 70, head: [tableColumn], body: tableRows,
       theme: 'striped',
       headStyles: { fillColor: [79, 70, 229], textColor: 255 },
-      styles: { fontSize: 10, cellPadding: 5 },
-      columnStyles: { 2: { halign: 'right' } }
+      styles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: { 2: { halign: 'right' }, 3: { halign: 'center' }, 4: { halign: 'right' }, 5: { halign: 'right' } }
     });
     const finalY = (doc as any).lastAutoTable.finalY || 70;
+    doc.setFontSize(10); doc.setTextColor(100, 116, 139);
+    doc.text(`Subtotal: ₹${(invoice.subtotal || invoice.amount).toFixed(2)}`, 140, finalY + 10);
+    doc.text(`CGST (9%): ₹${((invoice.totalTaxAmount || 0) / 2).toFixed(2)}`, 140, finalY + 16);
+    doc.text(`SGST (9%): ₹${((invoice.totalTaxAmount || 0) / 2).toFixed(2)}`, 140, finalY + 22);
     doc.setFontSize(12); doc.setTextColor(0);
-    doc.text(`Total Amount: ₹${invoice.amount.toFixed(2)}`, 140, finalY + 15);
+    doc.text(`Total Amount: ₹${invoice.amount.toFixed(2)}`, 140, finalY + 32);
+    doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+    doc.text(`GSTIN: ${invoice.gstNumber || '29AAAAA0000A1Z5'}`, 20, finalY + 32);
     doc.setFontSize(10); doc.setTextColor(148, 163, 184);
     doc.text('Thank you for choosing Sunrise Hospital.', 105, 280, { align: 'center' });
     doc.save(`Invoice_${invoice.id.substring(0, 8)}.pdf`);
@@ -276,37 +285,48 @@ export default function AdminInvoices() {
                     {isExpanded && (
                       <tr>
                         <td colSpan={7} className="px-4 pb-4 bg-slate-50">
-                          <div className="rounded-xl border border-slate-200 overflow-hidden">
-                            <table className="min-w-full divide-y divide-slate-200">
-                              <thead className="bg-white">
-                                <tr>
-                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Item Description</th>
-                                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Type</th>
-                                  <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-500">Amount</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100">
-                                {(invoice.items || []).map((item: any) => (
-                                  <tr key={item.id} className="bg-white">
-                                    <td className="px-4 py-2.5 text-sm text-slate-900">{item.description}</td>
-                                    <td className="px-4 py-2.5">
-                                      <span className="text-xs capitalize text-slate-500">{item.type.replace('_', ' ')}</span>
-                                    </td>
-                                    <td className="px-4 py-2.5 text-sm font-medium text-slate-900 text-right">₹{item.amount.toFixed(2)}</td>
+                            <div className="rounded-xl border border-slate-200 overflow-hidden">
+                              <table className="min-w-full divide-y divide-slate-200">
+                                <thead className="bg-white">
+                                  <tr>
+                                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Item Description</th>
+                                    <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Base Price</th>
+                                    <th className="px-4 py-2.5 text-center text-xs font-semibold text-slate-500">GST %</th>
+                                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-500">GST Amt</th>
+                                    <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-500">Total</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                              <tfoot className="bg-slate-50">
-                                <tr>
-                                  <td colSpan={2} className="px-4 py-2.5 text-sm font-bold text-slate-900">Total</td>
-                                  <td className="px-4 py-2.5 text-sm font-bold text-slate-900 text-right">₹{invoice.amount.toFixed(2)}</td>
-                                </tr>
-                              </tfoot>
-                            </table>
-                          </div>
-                          {invoice.paymentMethod && (
-                            <p className="mt-2 text-xs text-slate-500 px-1">Paid via <span className="font-medium capitalize">{invoice.paymentMethod}</span>{invoice.transactionId ? ` · Txn: ${invoice.transactionId}` : ''}</p>
-                          )}
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {(invoice.items || []).map((item: any) => (
+                                    <tr key={item.id} className="bg-white">
+                                      <td className="px-4 py-2.5 text-sm text-slate-900">{item.description}</td>
+                                      <td className="px-4 py-2.5 text-sm text-slate-900">₹{(item.amount || 0).toFixed(2)}</td>
+                                      <td className="px-4 py-2.5 text-sm text-slate-600 text-center">{item.taxRate || 0}%</td>
+                                      <td className="px-4 py-2.5 text-sm text-slate-900 text-right">₹{(item.taxAmount || 0).toFixed(2)}</td>
+                                      <td className="px-4 py-2.5 text-sm font-medium text-slate-900 text-right">₹{((item.amount || 0) + (item.taxAmount || 0)).toFixed(2)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                                <tfoot className="bg-slate-50/50">
+                                  <tr className="border-t border-slate-200">
+                                    <td colSpan={1} className="px-4 py-2 text-xs font-medium text-slate-500 uppercase">Summary</td>
+                                    <td className="px-4 py-2 text-sm text-slate-900">₹{(invoice.subtotal || invoice.amount).toFixed(2)}</td>
+                                    <td className="px-4 py-2 text-center text-slate-400">—</td>
+                                    <td className="px-4 py-2 text-sm text-slate-900 text-right">₹{(invoice.totalTaxAmount || 0).toFixed(2)}</td>
+                                    <td className="px-4 py-2 text-sm font-bold text-indigo-700 text-right">₹{invoice.amount.toFixed(2)}</td>
+                                  </tr>
+                                </tfoot>
+                              </table>
+                            </div>
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-4 px-1">
+                              <div className="flex gap-4">
+                                <p className="text-xs text-slate-500">CGST (9%): <span className="font-medium text-slate-700">₹{((invoice.totalTaxAmount || 0) / 2).toFixed(2)}</span></p>
+                                <p className="text-xs text-slate-500">SGST (9%): <span className="font-medium text-slate-700">₹{((invoice.totalTaxAmount || 0) / 2).toFixed(2)}</span></p>
+                              </div>
+                              {invoice.paymentMethod && (
+                                <p className="text-xs text-slate-500">Paid via <span className="font-medium capitalize text-slate-700">{invoice.paymentMethod}</span>{invoice.transactionId ? ` · Txn: ${invoice.transactionId}` : ''}</p>
+                              )}
+                            </div>
                         </td>
                       </tr>
                     )}

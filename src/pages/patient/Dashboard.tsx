@@ -6,7 +6,7 @@ import jsPDF from 'jspdf';
 import toast from 'react-hot-toast';
 
 export default function PatientDashboard() {
-  const { currentUser, appointments, prescriptions, invoices, labReports, users, beds, equipment, bedBookings, equipmentBookings } = useAppContext();
+  const { currentUser, appointments, prescriptions, invoices, labReports, users, beds, equipment, bedBookings, equipmentBookings, departments } = useAppContext();
 
   if (!currentUser) return null;
 
