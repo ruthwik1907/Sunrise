@@ -136,32 +136,34 @@ export default function LabTechnicianDashboard() {
 
       {/* Main Panel */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        {/* Tabs */}
-        <div className="flex items-center gap-1 p-2 border-b border-slate-200 bg-slate-50/70 overflow-x-auto">
-          {tabs.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                activeTab === tab.id
-                  ? 'bg-white text-indigo-700 shadow-sm border border-slate-200'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-              }`}>
-              {tab.label}
-              {tab.count !== undefined && (
-                <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                  activeTab === tab.id ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'
-                }`}>{tab.count}</span>
-              )}
-            </button>
-          ))}
-          <div className="ml-auto flex items-center gap-2 pr-2">
-            <div className="relative">
+        {/* Tabs + actions — two rows on mobile */}
+        <div className="border-b border-slate-200 bg-slate-50/70">
+          <div className="flex items-center gap-1 p-2 overflow-x-auto">
+            {tabs.map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-white text-indigo-700 shadow-sm border border-slate-200'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}>
+                {tab.label}
+                {tab.count !== undefined && (
+                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                    activeTab === tab.id ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-200 text-slate-600'
+                  }`}>{tab.count}</span>
+                )}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 px-3 pb-2">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input type="text" placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-48" />
+              <input type="text" placeholder="Search by patient, doctor or test..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
             <button onClick={() => setShowNewReport(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors">
-              + New Report
+              className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors">
+              + New
             </button>
           </div>
         </div>
@@ -361,7 +363,7 @@ export default function LabTechnicianDashboard() {
               {/* Breakdown by test type */}
               <div>
                 <h3 className="text-sm font-semibold text-slate-700 mb-3">Tests by Type</h3>
-                <div className="rounded-xl border border-slate-200 overflow-hidden">
+                <div className="rounded-xl border border-slate-200 overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
                       <tr>
