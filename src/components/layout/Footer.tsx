@@ -53,12 +53,12 @@ export const Footer = () => {
             <h3 className="text-white font-semibold mb-4 uppercase tracking-wider text-sm">Contact Us</h3>
             <ul className="space-y-4 text-sm">
               <li className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-indigo-400 shrink-0" />
-                <span>Renigunta<br />Tirupati</span>
+                <MapPin className="h-5 w-5 text-indigo-400 shrink-0 mt-1" />
+                <span>19/472, OLD CHECK POST CIRCLE,<br />OLD KADAPA ROAD,<br />BESIDE CANARA BANK, RENIGUNTA</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-indigo-400 shrink-0" />
-                <span>+91 87654 3212</span>
+                <span>9494994220</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-indigo-400 shrink-0" />
