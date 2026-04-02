@@ -225,6 +225,17 @@ export interface EquipmentBooking {
   notes?: string;
 }
 
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  stock: number;
+  unitPrice: number;
+  expiryDate: string;
+  manufacturer?: string;
+  reorderLevel: number;
+}
+
 interface AppContextType {
   currentUser: User | null;
   users: User[];
@@ -241,6 +252,7 @@ interface AppContextType {
   equipment: Equipment[];
   bedBookings: BedBooking[];
   equipmentBookings: EquipmentBooking[];
+  inventory: InventoryItem[];
   isAuthReady: boolean;
   login: (email: string, password?: string, role?: Role) => Promise<User>;
   logout: () => Promise<void>;
@@ -250,7 +262,7 @@ interface AppContextType {
   updateAppointmentStatus: (id: string, status: Appointment['status']) => Promise<void>;
   addMedicalRecord: (data: Omit<MedicalRecord, 'id' | 'date'>) => Promise<void>;
   addPrescription: (data: Omit<Prescription, 'id' | 'date' | 'status'>) => Promise<void>;
-  dispensePrescription: (id: string, pharmacistId: string) => Promise<void>;
+  dispensePrescription: (id: string, pharmacistId: string, dispensedItems: { inventoryItemId: string; quantity: number }[]) => Promise<void>;
   updatePrescriptionStatus: (id: string, status: Prescription['status']) => Promise<void>;
   addDoctor: (data: Partial<User> & { password?: string }) => Promise<void>;
   addReceptionist: (data: Partial<User> & { password?: string }) => Promise<void>;
@@ -282,6 +294,9 @@ interface AppContextType {
   updateEquipmentBooking: (id: string, data: Partial<EquipmentBooking>) => Promise<void>;
   uploadAvatar: (file: File) => Promise<void>;
   uploadLabReport: (file: File, patientId: string, doctorId: string, testName: string, labRequestId?: string) => Promise<void>;
+  addInventoryItem: (data: Omit<InventoryItem, 'id'>) => Promise<void>;
+  updateInventoryItem: (id: string, data: Partial<InventoryItem>) => Promise<void>;
+  deleteInventoryItem: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -302,6 +317,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [bedBookings, setBedBookings] = useState<BedBooking[]>([]);
   const [equipmentBookings, setEquipmentBookings] = useState<EquipmentBooking[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
@@ -371,12 +387,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const unsubEquipmentBookings = onSnapshot(collection(db, 'equipmentBookings'), (snapshot) => {
       setEquipmentBookings(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as EquipmentBooking)));
     });
+    const unsubInventory = onSnapshot(collection(db, 'inventory'), (snapshot) => {
+      setInventory(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem)));
+    });
 
     return () => {
       unsubSchedules(); unsubAppts();
       unsubRecords(); unsubPrescriptions(); unsubInvoices();
       unsubLabReqs(); unsubLabReps(); unsubMessages();
       unsubBeds(); unsubEquipment(); unsubBedBookings(); unsubEquipmentBookings();
+      unsubInventory();
     };
   }, [isAuthReady, currentUser]);
 
@@ -553,11 +573,51 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const dispensePrescription = async (id: string, pharmacistId: string) => {
-    await updateDoc(doc(db, 'prescriptions', id), { 
-      status: 'dispensed', 
-      dispensedBy: pharmacistId, 
-      dispensedAt: new Date().toISOString() 
+  const dispensePrescription = async (id: string, pharmacistId: string, dispensedItems: { inventoryItemId: string; quantity: number }[]) => {
+    // 1. Find the prescription to get patient info
+    const rx = prescriptions.find(p => p.id === id);
+    if (!rx) throw new Error('Prescription not found');
+
+    // 2. Deduct stock for each dispensed item and build invoice line items
+    const invoiceItems: InvoiceItem[] = [];
+    let totalAmount = 0;
+
+    for (const dispensed of dispensedItems) {
+      const item = inventory.find(i => i.id === dispensed.inventoryItemId);
+      if (!item) continue;
+      const newStock = item.stock - dispensed.quantity;
+      await updateDoc(doc(db, 'inventory', item.id), { stock: newStock });
+      const lineTotal = item.unitPrice * dispensed.quantity;
+      totalAmount += lineTotal;
+      invoiceItems.push({
+        id: `${item.id}_${Date.now()}`,
+        description: `${item.name} x${dispensed.quantity}`,
+        amount: lineTotal,
+        type: 'medication',
+      });
+    }
+
+    // 3. Auto-generate a pharmacy invoice
+    if (invoiceItems.length > 0) {
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 7);
+      const newInvoice: Omit<Invoice, 'id' | 'status'> = {
+        patientId: rx.patientId,
+        appointmentId: rx.appointmentId,
+        amount: totalAmount,
+        date: new Date().toISOString().split('T')[0],
+        dueDate: dueDate.toISOString().split('T')[0],
+        description: `Pharmacy — Prescription #${id.substring(0, 8).toUpperCase()}`,
+        items: invoiceItems,
+      };
+      await addDoc(collection(db, 'invoices'), { ...newInvoice, status: 'unpaid' });
+    }
+
+    // 4. Mark prescription as dispensed
+    await updateDoc(doc(db, 'prescriptions', id), {
+      status: 'dispensed',
+      dispensedBy: pharmacistId,
+      dispensedAt: new Date().toISOString(),
     });
   };
 
@@ -903,16 +963,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const addInventoryItem = async (data: Omit<InventoryItem, 'id'>) => {
+    await addDoc(collection(db, 'inventory'), data);
+  };
+
+  const updateInventoryItem = async (id: string, data: Partial<InventoryItem>) => {
+    await updateDoc(doc(db, 'inventory', id), data);
+  };
+
+  const deleteInventoryItem = async (id: string) => {
+    await deleteDoc(doc(db, 'inventory', id));
+  };
+
   return (
     <AppContext.Provider value={{
-      currentUser, users, departments, doctorSchedules, appointments, medicalRecords, prescriptions, invoices, labRequests, labReports, messages, beds, equipment, bedBookings, equipmentBookings, isAuthReady,
+      currentUser, users, departments, doctorSchedules, appointments, medicalRecords, prescriptions, invoices, labRequests, labReports, messages, beds, equipment, bedBookings, equipmentBookings, inventory, isAuthReady,
       login, logout, registerPatient, bookAppointment, updateAppointmentStatus, addMedicalRecord,
       addPrescription, dispensePrescription, updatePrescriptionStatus, createAppointment, createLabReport, updateLabReportStatus,
       addDoctor, addReceptionist, addPharmacist, addLabTechnician, addDepartment, generateInvoice, payInvoice,
-      sendMessage, markMessageRead, requestLabTest, addLabReport, 
+      sendMessage, markMessageRead, requestLabTest, addLabReport,
       createAdminUser, updateAdminUser, deleteUser, updateDoctorSchedule, uploadAvatar, uploadLabReport,
       addBed, updateBed, deleteBed, addEquipment, updateEquipment, deleteEquipment,
-      bookBed, updateBedBooking, bookEquipment, updateEquipmentBooking
+      bookBed, updateBedBooking, bookEquipment, updateEquipmentBooking,
+      addInventoryItem, updateInventoryItem, deleteInventoryItem,
+      createWalkInPatient,
     }}>
       {children}
     </AppContext.Provider>

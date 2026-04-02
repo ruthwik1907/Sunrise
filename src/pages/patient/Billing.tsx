@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { CreditCard, CheckCircle, Download, FileText, Search, Filter, AlertCircle, Calendar } from 'lucide-react';
+import { CreditCard, CheckCircle, Download, FileText, Search, Filter, AlertCircle, Calendar, Pill, Stethoscope, FlaskConical, ChevronDown, ChevronUp } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import toast from 'react-hot-toast';
@@ -9,8 +9,23 @@ export default function PatientBilling() {
   const { currentUser, invoices, payInvoice } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   if (!currentUser) return null;
+
+  const getCategory = (invoice: any) => {
+    const desc = (invoice.description || '').toLowerCase();
+    if (desc.includes('pharmacy') || invoice.items?.some((i: any) => i.type === 'medication')) return 'pharmacy';
+    if (desc.includes('lab') || invoice.items?.some((i: any) => i.type === 'lab_test')) return 'lab';
+    return 'consultation';
+  };
+
+  const getCategoryBadge = (invoice: any) => {
+    const cat = getCategory(invoice);
+    if (cat === 'pharmacy') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700"><Pill className="h-3 w-3" /> Pharmacy</span>;
+    if (cat === 'lab') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700"><FlaskConical className="h-3 w-3" /> Lab Test</span>;
+    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700"><Stethoscope className="h-3 w-3" /> Consultation</span>;
+  };
 
   const myInvoices = invoices
     .filter(i => i.patientId === currentUser.id)
@@ -179,64 +194,105 @@ export default function PatientBilling() {
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {myInvoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-slate-50 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-start">
-                      <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0 mr-3">
-                        <FileText className="h-5 w-5 text-slate-500" />
+                <React.Fragment key={invoice.id}>
+                  <tr className={`hover:bg-slate-50 transition-colors group ${expandedId === invoice.id ? 'bg-slate-50' : ''}`}>
+                    <td className="px-6 py-4">
+                      <div className="flex items-start gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0">
+                          <FileText className="h-5 w-5 text-slate-500" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-slate-900">#{invoice.id.substring(0, 8).toUpperCase()}</div>
+                          <div className="mt-0.5">{getCategoryBadge(invoice)}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-medium text-slate-900">#{invoice.id}</div>
-                        <div className="text-sm text-slate-500 line-clamp-1 max-w-xs">{invoice.description}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-slate-900">
+                        <Calendar className="h-4 w-4 mr-1.5 text-slate-400" />
+                        {new Date(invoice.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-slate-900">
-                      <Calendar className="h-4 w-4 mr-1.5 text-slate-400" />
-                      {new Date(invoice.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-slate-900">
-                      ${invoice.amount.toFixed(2)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ring-1 ring-inset ${
-                      invoice.status === 'paid' 
-                        ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' 
-                        : 'bg-rose-50 text-rose-700 ring-rose-600/20'
-                    }`}>
-                      {invoice.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end gap-2">
-                      <button 
-                        onClick={() => downloadInvoicePDF(invoice)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                        title="Download PDF"
-                      >
-                        <Download className="h-4 w-4" />
-                      </button>
-                      {invoice.status === 'unpaid' ? (
-                        <button 
-                          onClick={() => payInvoice(invoice.id, 'cash')}
-                          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors"
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-bold text-slate-900">
+                        ₹{invoice.amount.toFixed(2)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium capitalize ring-1 ring-inset ${
+                        invoice.status === 'paid'
+                          ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20'
+                          : 'bg-rose-50 text-rose-700 ring-rose-600/20'
+                      }`}>
+                        {invoice.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setExpandedId(expandedId === invoice.id ? null : invoice.id)}
+                          className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                          title="View Details"
                         >
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Pay Now
+                          {expandedId === invoice.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </button>
-                      ) : (
-                        <span className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg">
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Paid
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+                        <button
+                          onClick={() => downloadInvoicePDF(invoice)}
+                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                          title="Download PDF"
+                        >
+                          <Download className="h-4 w-4" />
+                        </button>
+                        {invoice.status === 'unpaid' ? (
+                          <button
+                            onClick={() => payInvoice(invoice.id, 'cash')}
+                            className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors"
+                          >
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Pay Now
+                          </button>
+                        ) : (
+                          <span className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-emerald-600 bg-emerald-50 rounded-lg">
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Paid
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                  {expandedId === invoice.id && invoice.items && invoice.items.length > 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-6 pb-4 bg-slate-50">
+                        <div className="rounded-xl border border-slate-200 overflow-hidden">
+                          <table className="min-w-full divide-y divide-slate-100">
+                            <thead className="bg-white">
+                              <tr>
+                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Item</th>
+                                <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500">Type</th>
+                                <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-500">Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 bg-white">
+                              {invoice.items.map((item: any) => (
+                                <tr key={item.id}>
+                                  <td className="px-4 py-2.5 text-sm text-slate-900">{item.description}</td>
+                                  <td className="px-4 py-2.5 text-xs text-slate-500 capitalize">{item.type.replace('_', ' ')}</td>
+                                  <td className="px-4 py-2.5 text-sm font-medium text-slate-900 text-right">₹{item.amount.toFixed(2)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot className="bg-slate-50">
+                              <tr>
+                                <td colSpan={2} className="px-4 py-2.5 text-sm font-bold text-slate-900">Total</td>
+                                <td className="px-4 py-2.5 text-sm font-bold text-slate-900 text-right">₹{invoice.amount.toFixed(2)}</td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
               {myInvoices.length === 0 && (
                 <tr>
