@@ -1,0 +1,218 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the system (patient, doctor, admin, etc.)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["patient", "doctor", "admin", "receptionist", "pharmacist", "lab_technician"] },
+        "phone": { "type": "string" },
+        "avatar": { "type": "string" },
+        "mrn": { "type": "string" },
+        "dob": { "type": "string" },
+        "gender": { "type": "string", "enum": ["male", "female", "other"] },
+        "bloodGroup": { "type": "string" },
+        "address": { "type": "string" },
+        "emergencyContact": { "type": "string" },
+        "insuranceProvider": { "type": "string" },
+        "insurancePolicyNumber": { "type": "string" },
+        "departmentId": { "type": "string" },
+        "specialty": { "type": "string" },
+        "qualifications": { "type": "string" },
+        "experienceYears": { "type": "number" },
+        "consultationFee": { "type": "number" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "Department": {
+      "title": "Department",
+      "description": "Hospital department",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string" }
+      },
+      "required": ["name", "description"]
+    },
+    "DoctorSchedule": {
+      "title": "DoctorSchedule",
+      "description": "Schedule for a doctor",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "dayOfWeek": { "type": "number" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "slotDurationMinutes": { "type": "number" }
+      },
+      "required": ["doctorId", "dayOfWeek", "startTime", "endTime", "slotDurationMinutes"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Patient appointment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "departmentId": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "completed", "cancelled", "no_show"] },
+        "reason": { "type": "string" },
+        "symptoms": { "type": "string" }
+      },
+      "required": ["patientId", "doctorId", "departmentId", "date", "time", "status", "reason"]
+    },
+    "MedicalRecord": {
+      "title": "MedicalRecord",
+      "description": "Patient medical record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "appointmentId": { "type": "string" },
+        "date": { "type": "string" },
+        "vitals": { "type": "object" },
+        "allergies": { "type": "array", "items": { "type": "string" } },
+        "pastMedicalHistory": { "type": "string" },
+        "diagnosis": { "type": "string" },
+        "clinicalNotes": { "type": "string" },
+        "followUpDate": { "type": "string" }
+      },
+      "required": ["patientId", "doctorId", "appointmentId", "date", "vitals", "allergies", "pastMedicalHistory", "diagnosis", "clinicalNotes"]
+    },
+    "Prescription": {
+      "title": "Prescription",
+      "description": "Patient prescription",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "appointmentId": { "type": "string" },
+        "date": { "type": "string" },
+        "items": { "type": "array" },
+        "status": { "type": "string", "enum": ["pending", "dispensed"] },
+        "dispensedBy": { "type": "string" },
+        "dispensedAt": { "type": "string" }
+      },
+      "required": ["patientId", "doctorId", "appointmentId", "date", "items", "status"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Patient invoice",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "appointmentId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "status": { "type": "string", "enum": ["paid", "unpaid", "partial", "cancelled"] },
+        "items": { "type": "array" },
+        "paymentMethod": { "type": "string", "enum": ["cash", "card", "upi", "insurance"] },
+        "transactionId": { "type": "string" }
+      },
+      "required": ["patientId", "amount", "date", "dueDate", "status", "items"]
+    },
+    "LabRequest": {
+      "title": "LabRequest",
+      "description": "Lab test request",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "appointmentId": { "type": "string" },
+        "date": { "type": "string" },
+        "testName": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "sample_collected", "completed"] },
+        "notes": { "type": "string" }
+      },
+      "required": ["patientId", "doctorId", "date", "testName", "status"]
+    },
+    "LabReport": {
+      "title": "LabReport",
+      "description": "Lab test report",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "labRequestId": { "type": "string" },
+        "patientId": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "technicianId": { "type": "string" },
+        "date": { "type": "string" },
+        "testName": { "type": "string" },
+        "resultData": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "fileUrl": { "type": "string" }
+      },
+      "required": ["labRequestId", "patientId", "doctorId", "date", "testName", "resultData", "status"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat message",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["senderId", "receiverId", "content", "timestamp", "read"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Collection of users"
+    },
+    "departments": {
+      "schema": { "$ref": "#/entities/Department" },
+      "description": "Collection of departments"
+    },
+    "doctorSchedules": {
+      "schema": { "$ref": "#/entities/DoctorSchedule" },
+      "description": "Collection of doctor schedules"
+    },
+    "appointments": {
+      "schema": { "$ref": "#/entities/Appointment" },
+      "description": "Collection of appointments"
+    },
+    "medicalRecords": {
+      "schema": { "$ref": "#/entities/MedicalRecord" },
+      "description": "Collection of medical records"
+    },
+    "prescriptions": {
+      "schema": { "$ref": "#/entities/Prescription" },
+      "description": "Collection of prescriptions"
+    },
+    "invoices": {
+      "schema": { "$ref": "#/entities/Invoice" },
+      "description": "Collection of invoices"
+    },
+    "labRequests": {
+      "schema": { "$ref": "#/entities/LabRequest" },
+      "description": "Collection of lab requests"
+    },
+    "labReports": {
+      "schema": { "$ref": "#/entities/LabReport" },
+      "description": "Collection of lab reports"
+    },
+    "messages": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Collection of messages"
+    }
+  }
+}

@@ -1,0 +1,542 @@
+import React, { useState } from 'react';
+import { useAppContext } from '../../context/AppContext';
+import { TestTube, Search, CheckCircle, Clock, AlertTriangle, FileText, User, Upload } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+export default function LabTechnicianDashboard() {
+  const { currentUser, labReports, users, updateLabReportStatus, createLabReport } = useAppContext();
+  const [activeTab, setActiveTab] = useState<'pending' | 'completed' | 'all'>('pending');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showNewReport, setShowNewReport] = useState(false);
+
+  if (!currentUser) return null;
+
+  const pendingReports = labReports.filter(report => report.status === 'pending');
+  const completedReports = labReports.filter(report => report.status === 'completed');
+
+  const filteredPending = pendingReports.filter(report => {
+    const patient = users.find(u => u.id === report.patientId);
+    const doctor = users.find(u => u.id === report.doctorId);
+    return (patient?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+           (doctor?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+           (report.testType || '').toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  const filteredCompleted = completedReports.filter(report => {
+    const patient = users.find(u => u.id === report.patientId);
+    const doctor = users.find(u => u.id === report.doctorId);
+    return (patient?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+           (doctor?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+           (report.testType || '').toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  const filteredAll = labReports.filter(report => {
+    const patient = users.find(u => u.id === report.patientId);
+    const doctor = users.find(u => u.id === report.doctorId);
+    return (patient?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+           (doctor?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+           (report.testType || '').toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
+  const handleCompleteReport = async (reportId: string, results: string) => {
+    try {
+      await updateLabReportStatus(reportId, 'completed', results, currentUser.id);
+      toast.success('Lab report completed successfully');
+    } catch (error) {
+      toast.error('Failed to complete lab report');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Lab Technician Dashboard</h1>
+          <p className="text-slate-500 text-sm mt-1">Manage laboratory tests and reports</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+            <TestTube className="h-5 w-5 text-purple-600" />
+          </div>
+          <div className="text-sm">
+            <p className="font-medium text-slate-900">{currentUser.name}</p>
+            <p className="text-slate-500">Lab Technician</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
+          <div className="flex items-center">
+            <Clock className="h-8 w-8 text-amber-600" />
+            <div className="ml-3">
+              <p className="text-sm font-medium text-slate-600">Pending Tests</p>
+              <p className="text-2xl font-bold text-slate-900">{pendingReports.length}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
+          <div className="flex items-center">
+            <CheckCircle className="h-8 w-8 text-green-600" />
+            <div className="ml-3">
+              <p className="text-sm font-medium text-slate-600">Completed Today</p>
+              <p className="text-2xl font-bold text-slate-900">
+                {completedReports.filter(report => {
+                  const today = new Date().toDateString();
+                  return report.completedAt && new Date(report.completedAt).toDateString() === today;
+                }).length}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
+          <div className="flex items-center">
+            <FileText className="h-8 w-8 text-blue-600" />
+            <div className="ml-3">
+              <p className="text-sm font-medium text-slate-600">Total Reports</p>
+              <p className="text-2xl font-bold text-slate-900">{labReports.length}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg p-4 border border-slate-200">
+          <div className="flex items-center">
+            <AlertTriangle className="h-8 w-8 text-red-600" />
+            <div className="ml-3">
+              <p className="text-sm font-medium text-slate-600">Urgent</p>
+              <p className="text-2xl font-bold text-slate-900">
+                {pendingReports.filter(report => {
+                  // Consider reports older than 48 hours as urgent
+                  const reportDate = new Date(report.date);
+                  const now = new Date();
+                  const hoursDiff = (now.getTime() - reportDate.getTime()) / (1000 * 60 * 60);
+                  return hoursDiff > 48;
+                }).length}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs and Search */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
+          <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg w-full sm:w-auto">
+            <button
+              onClick={() => setActiveTab('pending')}
+              className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'pending'
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+              }`}
+            >
+              Pending ({pendingReports.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('completed')}
+              className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'completed'
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+              }`}
+            >
+              Completed ({completedReports.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'all'
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+              }`}
+            >
+              All ({labReports.length})
+            </button>
+          </div>
+
+          <div className="flex gap-2">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search lab reports..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+              />
+            </div>
+            <button
+              onClick={() => setShowNewReport(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              New Report
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        {activeTab === 'pending' && (
+          <div className="space-y-4">
+            {filteredPending.map(report => {
+              const patient = users.find(u => u.id === report.patientId);
+              const doctor = users.find(u => u.id === report.doctorId);
+              const isUrgent = (() => {
+                const reportDate = new Date(report.date);
+                const now = new Date();
+                const hoursDiff = (now.getTime() - reportDate.getTime()) / (1000 * 60 * 60);
+                return hoursDiff > 48;
+              })();
+
+              return (
+                <div key={report.id} className={`bg-white rounded-xl shadow-sm border p-6 ${isUrgent ? 'border-red-200 bg-red-50/50' : 'border-slate-200'}`}>
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
+                          <User className="h-5 w-5 text-slate-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900">{patient?.name || 'Unknown Patient'}</h3>
+                          <p className="text-sm text-slate-500">Ordered by Dr. {doctor?.name || 'Unknown'}</p>
+                        </div>
+                        {isUrgent && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Urgent
+                          </span>
+                        )}
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-4">
+                        <p className="text-slate-800 font-medium">{report.testType}</p>
+                        {report.notes && (
+                          <p className="text-slate-600 text-sm mt-2">{report.notes}</p>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-2">
+                        Ordered on {new Date(report.date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <CompleteReportModal
+                        report={report}
+                        onComplete={handleCompleteReport}
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {filteredPending.length === 0 && (
+              <div className="text-center py-12">
+                <CheckCircle className="mx-auto h-12 w-12 text-green-400" />
+                <h3 className="mt-2 text-sm font-medium text-slate-900">All caught up!</h3>
+                <p className="mt-1 text-sm text-slate-500">No pending lab reports to process.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'completed' && (
+          <div className="space-y-4">
+            {filteredCompleted.map(report => {
+              const patient = users.find(u => u.id === report.patientId);
+              const doctor = users.find(u => u.id === report.doctorId);
+              const technician = users.find(u => u.id === report.completedBy);
+
+              return (
+                <div key={report.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900">{patient?.name || 'Unknown Patient'}</h3>
+                          <p className="text-sm text-slate-500">Ordered by Dr. {doctor?.name || 'Unknown'}</p>
+                        </div>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Completed
+                        </span>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-4">
+                        <p className="text-slate-800 font-medium">{report.testType}</p>
+                        {report.results && (
+                          <div className="mt-2">
+                            <p className="text-slate-600 text-sm font-medium">Results:</p>
+                            <p className="text-slate-800 whitespace-pre-wrap">{report.results}</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-slate-500 mt-2">
+                        <span>Ordered: {new Date(report.date).toLocaleDateString()}</span>
+                        <span>Completed: {report.completedAt ? new Date(report.completedAt).toLocaleDateString() : 'Unknown'}</span>
+                        <span>By: {technician?.name || 'Unknown Technician'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {filteredCompleted.length === 0 && (
+              <div className="text-center py-12">
+                <FileText className="mx-auto h-12 w-12 text-slate-400" />
+                <h3 className="mt-2 text-sm font-medium text-slate-900">No completed reports</h3>
+                <p className="mt-1 text-sm text-slate-500">Completed lab reports will appear here.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'all' && (
+          <div className="space-y-4">
+            {filteredAll.map(report => {
+              const patient = users.find(u => u.id === report.patientId);
+              const doctor = users.find(u => u.id === report.doctorId);
+              const technician = report.completedBy ? users.find(u => u.id === report.completedBy) : null;
+
+              return (
+                <div key={report.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                          report.status === 'completed' ? 'bg-green-100' : 'bg-yellow-100'
+                        }`}>
+                          {report.status === 'completed' ? (
+                            <CheckCircle className="h-5 w-5 text-green-600" />
+                          ) : (
+                            <Clock className="h-5 w-5 text-yellow-600" />
+                          )}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900">{patient?.name || 'Unknown Patient'}</h3>
+                          <p className="text-sm text-slate-500">Ordered by Dr. {doctor?.name || 'Unknown'}</p>
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          report.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {report.status}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50 rounded-lg p-4">
+                        <p className="text-slate-800 font-medium">{report.testType}</p>
+                        {report.results && (
+                          <div className="mt-2">
+                            <p className="text-slate-600 text-sm font-medium">Results:</p>
+                            <p className="text-slate-800 whitespace-pre-wrap">{report.results}</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-slate-500 mt-2">
+                        <span>Ordered: {new Date(report.date).toLocaleDateString()}</span>
+                        {report.completedAt && (
+                          <>
+                            <span>Completed: {new Date(report.completedAt).toLocaleDateString()}</span>
+                            <span>By: {technician?.name || 'Unknown Technician'}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            {filteredAll.length === 0 && (
+              <div className="text-center py-12">
+                <TestTube className="mx-auto h-12 w-12 text-slate-400" />
+                <h3 className="mt-2 text-sm font-medium text-slate-900">No lab reports found</h3>
+                <p className="mt-1 text-sm text-slate-500">Lab reports will appear here.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* New Report Modal */}
+      {showNewReport && (
+        <NewReportModal
+          onClose={() => setShowNewReport(false)}
+          onCreate={createLabReport}
+          users={users}
+        />
+      )}
+    </div>
+  );
+}
+
+function CompleteReportModal({ report, onComplete }: { report: any; onComplete: (id: string, results: string) => void }) {
+  const [results, setResults] = useState('');
+  const [showModal, setShowModal] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onComplete(report.id, results);
+    setShowModal(false);
+    setResults('');
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setShowModal(true)}
+        className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors"
+      >
+        <CheckCircle className="h-4 w-4 mr-2" />
+        Complete
+      </button>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">Complete Lab Report</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Test Results</label>
+                <textarea
+                  value={results}
+                  onChange={(e) => setResults(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  rows={6}
+                  placeholder="Enter test results..."
+                  required
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Complete Report
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function NewReportModal({ onClose, onCreate, users }: {
+  onClose: () => void;
+  onCreate: (report: any) => Promise<void>;
+  users: any[];
+}) {
+  const [formData, setFormData] = useState({
+    patientId: '',
+    doctorId: '',
+    testType: '',
+    notes: ''
+  });
+
+  const patients = users.filter(u => u.role === 'patient');
+  const doctors = users.filter(u => u.role === 'doctor');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await onCreate(formData);
+      toast.success('Lab report created successfully');
+      onClose();
+    } catch (error) {
+      toast.error('Failed to create lab report');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+        <h2 className="text-xl font-bold text-slate-900 mb-4">New Lab Report</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Patient</label>
+            <select
+              value={formData.patientId}
+              onChange={(e) => setFormData({...formData, patientId: e.target.value})}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+            >
+              <option value="">Select Patient</option>
+              {patients.map(patient => (
+                <option key={patient.id} value={patient.id}>{patient.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Doctor</label>
+            <select
+              value={formData.doctorId}
+              onChange={(e) => setFormData({...formData, doctorId: e.target.value})}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+            >
+              <option value="">Select Doctor</option>
+              {doctors.map(doctor => (
+                <option key={doctor.id} value={doctor.id}>Dr. {doctor.name}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Test Type</label>
+            <select
+              value={formData.testType}
+              onChange={(e) => setFormData({...formData, testType: e.target.value})}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+            >
+              <option value="">Select Test Type</option>
+              <option value="Blood Test">Blood Test</option>
+              <option value="Urine Test">Urine Test</option>
+              <option value="X-Ray">X-Ray</option>
+              <option value="MRI">MRI</option>
+              <option value="CT Scan">CT Scan</option>
+              <option value="Ultrasound">Ultrasound</option>
+              <option value="ECG">ECG</option>
+              <option value="Biopsy">Biopsy</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Notes</label>
+            <textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({...formData, notes: e.target.value})}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              rows={3}
+              placeholder="Additional notes..."
+            />
+          </div>
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Create Report
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
