@@ -129,6 +129,30 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /inventory/{itemId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || hasRole('pharmacist');
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /bills/{billId} {
+      allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
+      allow create: if hasRole('pharmacist') || isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /adminInvoices/{invoiceId} {
+      allow read: if isAdmin();
+      allow create: if hasRole('pharmacist') || isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
     match /bedBookings/{bookingId} {
       allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
       allow create: if hasRole('doctor') || isAdmin();
