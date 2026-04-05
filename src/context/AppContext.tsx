@@ -231,6 +231,20 @@ export interface EquipmentBooking {
   notes?: string;
 }
 
+export interface HospitalSettings {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  gstNumber: string;
+  currency: string;
+  theme: 'light' | 'dark';
+  notifications: {
+    email: boolean;
+    sms: boolean;
+  };
+}
+
 export interface InventoryItem {
   id: string;
   name: string;
@@ -259,6 +273,7 @@ interface AppContextType {
   bedBookings: BedBooking[];
   equipmentBookings: EquipmentBooking[];
   inventory: InventoryItem[];
+  hospitalSettings: HospitalSettings | null;
   isAuthReady: boolean;
   login: (email: string, password?: string, role?: Role) => Promise<User>;
   logout: () => Promise<void>;
@@ -303,6 +318,7 @@ interface AppContextType {
   addInventoryItem: (data: Omit<InventoryItem, 'id'>) => Promise<void>;
   updateInventoryItem: (id: string, data: Partial<InventoryItem>) => Promise<void>;
   deleteInventoryItem: (id: string) => Promise<void>;
+  updateHospitalSettings: (data: Partial<HospitalSettings>) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -324,6 +340,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [bedBookings, setBedBookings] = useState<BedBooking[]>([]);
   const [equipmentBookings, setEquipmentBookings] = useState<EquipmentBooking[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [hospitalSettings, setHospitalSettings] = useState<HospitalSettings | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
@@ -396,13 +413,35 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const unsubInventory = onSnapshot(collection(db, 'inventory'), (snapshot) => {
       setInventory(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem)));
     });
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'general'), (snapshot) => {
+      if (snapshot.exists()) {
+        setHospitalSettings(snapshot.data() as HospitalSettings);
+      } else {
+        // Initialize default settings if they don't exist
+        const defaultSettings: HospitalSettings = {
+          name: 'Sunrise Hospital',
+          email: 'contact@sunrisehospital.com',
+          phone: '+91 98765 43210',
+          address: '123 Healthcare Way, Medical District, Hyderabad, India',
+          gstNumber: '29AAAAA0000A1Z5',
+          currency: 'INR',
+          theme: 'light',
+          notifications: {
+            email: true,
+            sms: true,
+          }
+        };
+        setDoc(doc(db, 'settings', 'general'), defaultSettings);
+        setHospitalSettings(defaultSettings);
+      }
+    });
 
     return () => {
       unsubSchedules(); unsubAppts();
       unsubRecords(); unsubPrescriptions(); unsubInvoices();
       unsubLabReqs(); unsubLabReps(); unsubMessages();
       unsubBeds(); unsubEquipment(); unsubBedBookings(); unsubEquipmentBookings();
-      unsubInventory();
+      unsubInventory(); unsubSettings();
     };
   }, [isAuthReady, currentUser]);
 
@@ -939,7 +978,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addBed = async (data: Omit<Bed, 'id'>) => {
     try {
-      await addDoc(collection(db, 'beds'), data);
+      if (!data.roomNumber || !data.bedNumber) {
+        throw new Error('Room number and Bed number are required');
+      }
+      await addDoc(collection(db, 'beds'), {
+        ...data,
+        status: data.status || 'available',
+        createdAt: new Date().toISOString()
+      });
     } catch (error) {
       console.error('Failed to add bed:', error);
       throw error;
@@ -961,7 +1007,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const addEquipment = async (data: Omit<Equipment, 'id'>) => {
     try {
-      await addDoc(collection(db, 'equipment'), data);
+      if (!data.name || !data.location) {
+        throw new Error('Equipment name and location are required');
+      }
+      await addDoc(collection(db, 'equipment'), {
+        ...data,
+        status: data.status || 'available',
+        createdAt: new Date().toISOString()
+      });
     } catch (error) {
       console.error('Failed to add equipment:', error);
       throw error;
@@ -1027,9 +1080,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await deleteDoc(doc(db, 'inventory', id));
   };
 
+  const updateHospitalSettings = async (data: Partial<HospitalSettings>) => {
+    try {
+      await setDoc(doc(db, 'settings', 'general'), data, { merge: true });
+      toast.success('Settings updated successfully!');
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      toast.error('Failed to update settings.');
+      throw error;
+    }
+  };
+
   return (
     <AppContext.Provider value={{
-      currentUser, users, departments, doctorSchedules, appointments, medicalRecords, prescriptions, invoices, labRequests, labReports, messages, beds, equipment, bedBookings, equipmentBookings, inventory, isAuthReady,
+      currentUser, users, departments, doctorSchedules, appointments, medicalRecords, prescriptions, invoices, labRequests, labReports, messages, beds, equipment, bedBookings, equipmentBookings, inventory, hospitalSettings, isAuthReady,
       login, logout, registerPatient, bookAppointment, updateAppointmentStatus, addMedicalRecord,
       addPrescription, dispensePrescription, updatePrescriptionStatus, createAppointment, createLabReport, updateLabReportStatus,
       addDoctor, addReceptionist, addPharmacist, addLabTechnician, addDepartment, generateInvoice, payInvoice,
@@ -1038,7 +1102,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addBed, updateBed, deleteBed, addEquipment, updateEquipment, deleteEquipment,
       bookBed, updateBedBooking, bookEquipment, updateEquipmentBooking,
       addInventoryItem, updateInventoryItem, deleteInventoryItem,
-      createWalkInPatient,
+      createWalkInPatient, updateHospitalSettings,
     }}>
       {children}
     </AppContext.Provider>

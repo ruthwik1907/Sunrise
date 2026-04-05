@@ -3,7 +3,8 @@ import { useAppContext } from '../../context/AppContext';
 import { Heart, Shield, Clock, Users, Award, Stethoscope } from 'lucide-react';
 
 export default function About() {
-  const { departments } = useAppContext();
+  const { departments, hospitalSettings } = useAppContext();
+  const hospitalName = hospitalSettings?.name || 'Hospital';
 
   const values = [
     { icon: <Heart className="w-6 h-6 text-rose-500" />, title: "Compassionate Care", desc: "We treat every patient with empathy, respect, and kindness." },
@@ -23,7 +24,7 @@ export default function About() {
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6">About Sunrise Hospital</h1>
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6">About {hospitalName}</h1>
             <p className="text-xl text-indigo-100 leading-relaxed">
               We are a leading healthcare provider committed to delivering exceptional medical services. 
               Our hospital is equipped with modern technology and staffed by compassionate professionals dedicated to your well-being.

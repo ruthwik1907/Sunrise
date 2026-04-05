@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAppContext } from '../../context/AppContext';
 import { ArrowRight, Activity, Users, Calendar, Shield, Heart, Award, Clock, PhoneCall, Stethoscope, CheckCircle2 } from 'lucide-react';
 
 export default function Home() {
+  const { hospitalSettings } = useAppContext();
   const scrollingImages = [
     "/images/hospital-1.jpg",
     "/images/hospital-2.jpg",
@@ -23,7 +25,7 @@ export default function Home() {
               <span>Modern Healthcare Platform</span>
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight mb-6 leading-tight">
-              Advanced Healthcare <br className="hidden sm:block" />
+              Advanced {hospitalSettings?.name || 'Healthcare'} <br className="hidden sm:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-500">Made Accessible</span>
             </h1>
             <p className="text-lg sm:text-xl text-slate-600 mb-8 sm:mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
@@ -55,7 +57,7 @@ export default function Home() {
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 sm:border-8 border-white">
               <img 
                 src="/images/hospital-hero.jpg" 
-                alt="Modern Hospital Facility" 
+                alt={hospitalSettings?.name || "Modern Hospital Facility"} 
                 className="w-full h-[300px] sm:h-[400px] lg:h-[500px] object-cover"
                 onError={(event) => { (event.target as HTMLImageElement).src = 'https://source.unsplash.com/featured/1200x800/?hospital,clinic,doctor'; }}
               />
@@ -131,7 +133,7 @@ export default function Home() {
       <div className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Why Choose Sunrise Hospital?</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Why Choose {hospitalSettings?.name || 'Sunrise Hospital'}?</h2>
             <p className="text-lg text-slate-600">We combine medical expertise with modern technology to provide you with the best healthcare experience possible.</p>
           </div>
           
@@ -210,7 +212,7 @@ export default function Home() {
             <Heart className="w-10 h-10 text-indigo-400" />
           </div>
           <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">Ready to prioritize your health?</h2>
-          <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">Join thousands of patients who trust Sunrise Hospital for their healthcare needs. Create an account today to manage your appointments, records, and more.</p>
+          <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">Join thousands of patients who trust {hospitalSettings?.name || 'Sunrise Hospital'} for their healthcare needs. Create an account today to manage your appointments, records, and more.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link to="/register" className="inline-flex justify-center items-center px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-slate-900 bg-white hover:bg-slate-50 shadow-lg hover:shadow-xl transition-all">
               Create Patient Account

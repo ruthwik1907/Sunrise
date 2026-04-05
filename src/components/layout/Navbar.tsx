@@ -4,7 +4,7 @@ import { useAppContext } from '../../context/AppContext';
 import { LogOut, User as UserIcon, Menu, X } from 'lucide-react';
 
 export const Navbar = () => {
-  const { currentUser, logout } = useAppContext();
+  const { currentUser, logout, hospitalSettings } = useAppContext();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -22,8 +22,8 @@ export const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className="flex items-center gap-2 text-indigo-600" onClick={closeMenu}>
-              <img src="/images/logo.png" alt="Sunrise Hospital Logo" className="h-10 w-auto" />
-              <span className="font-bold text-xl tracking-tight text-slate-900">Sunrise Hospital</span>
+              <img src="/images/logo.png" alt={`${hospitalSettings?.name || 'Sunrise Hospital'} Logo`} className="h-10 w-auto" />
+              <span className="font-bold text-xl tracking-tight text-slate-900">{hospitalSettings?.name || 'Sunrise Hospital'}</span>
             </Link>
           </div>
 

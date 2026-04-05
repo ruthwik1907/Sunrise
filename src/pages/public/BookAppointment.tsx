@@ -5,7 +5,7 @@ import { Calendar, Clock, User, Stethoscope, FileText, CheckCircle2, AlertCircle
 import toast from 'react-hot-toast';
 
 export default function BookAppointment() {
-  const { currentUser, users, departments, bookAppointment, doctorSchedules, appointments } = useAppContext();
+  const { currentUser, users, departments, bookAppointment, doctorSchedules, appointments, hospitalSettings } = useAppContext();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedDoctor = searchParams.get('doctor');

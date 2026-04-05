@@ -4,11 +4,48 @@ import { Settings as SettingsIcon, User, Bell, Shield, Key, Smartphone, Mail, Sa
 import toast from 'react-hot-toast';
 
 export default function AdminSettings() {
-  const { currentUser, users, createAdminUser, updateAdminUser, deleteUser } = useAppContext();
+  const { currentUser, users, createAdminUser, updateAdminUser, deleteUser, hospitalSettings, updateHospitalSettings } = useAppContext();
   const [activeTab, setActiveTab] = useState('general');
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '', phone: '' });
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Local form state for hospital settings
+  const [formSettings, setFormSettings] = useState({
+    name: hospitalSettings?.name || '',
+    email: hospitalSettings?.email || '',
+    phone: hospitalSettings?.phone || '',
+    address: hospitalSettings?.address || '',
+    gstNumber: hospitalSettings?.gstNumber || '',
+    currency: hospitalSettings?.currency || 'INR',
+  });
+
+  // Update form state when hospitalSettings loads
+  React.useEffect(() => {
+    if (hospitalSettings) {
+      setFormSettings({
+        name: hospitalSettings.name,
+        email: hospitalSettings.email,
+        phone: hospitalSettings.phone,
+        address: hospitalSettings.address,
+        gstNumber: hospitalSettings.gstNumber,
+        currency: hospitalSettings.currency,
+      });
+    }
+  }, [hospitalSettings]);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      await updateHospitalSettings(formSettings);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const admins = users.filter(u => u.role === 'admin');
 
@@ -130,40 +167,46 @@ export default function AdminSettings() {
                 <p className="text-sm text-slate-500 mt-1">Configure basic hospital information and platform defaults.</p>
               </div>
 
-              <div className="space-y-6 max-w-2xl">
+              <form onSubmit={handleSaveSettings} className="space-y-6 max-w-2xl">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700">Hospital Name</label>
                     <input 
-                      type="text" 
-                      defaultValue="City General Hospital"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors text-sm"
+                       type="text" 
+                       value={formSettings.name}
+                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormSettings({...formSettings, name: e.target.value})}
+                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors text-sm"
+                       placeholder="Sunrise Hospital"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700">Contact Email</label>
                     <input 
                       type="email" 
-                      defaultValue="admin@citygeneral.com"
+                      value={formSettings.email}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormSettings({...formSettings, email: e.target.value})}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors text-sm"
+                      placeholder="admin@sunrise.com"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700">Phone Number</label>
                     <input 
                       type="tel" 
-                      defaultValue="+1 (555) 123-4567"
+                      value={formSettings.phone}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormSettings({...formSettings, phone: e.target.value})}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors text-sm"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700">Timezone</label>
-                    <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors text-sm appearance-none">
-                      <option>Pacific Time (PT)</option>
-                      <option>Eastern Time (ET)</option>
-                      <option>Central Time (CT)</option>
-                      <option>Mountain Time (MT)</option>
-                    </select>
+                    <label className="text-sm font-medium text-slate-700">GST Number</label>
+                    <input 
+                      type="text" 
+                      value={formSettings.gstNumber}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormSettings({...formSettings, gstNumber: e.target.value})}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors text-sm"
+                      placeholder="29AAAAA0000A1Z5"
+                    />
                   </div>
                 </div>
 
@@ -171,18 +214,23 @@ export default function AdminSettings() {
                   <label className="text-sm font-medium text-slate-700">Hospital Address</label>
                   <textarea 
                     rows={3}
-                    defaultValue="123 Medical Center Blvd, Health City, HC 90210"
+                    value={formSettings.address}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormSettings({...formSettings, address: e.target.value})}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors text-sm resize-none"
                   />
                 </div>
 
                 <div className="pt-6 border-t border-slate-100 flex justify-end">
-                  <button className="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl shadow-sm transition-colors">
+                  <button 
+                    type="submit"
+                    disabled={isSaving}
+                    className="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl shadow-sm transition-colors disabled:opacity-50"
+                  >
                     <Save className="w-4 h-4 mr-2" />
-                    Save Changes
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                 </div>
-              </div>
+              </form>
             </div>
           )}
 
