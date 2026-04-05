@@ -74,6 +74,7 @@ export const DashboardLayout = ({ allowedRoles }: { allowedRoles: string[] }) =>
 
   const pharmacistLinks = [
     { name: 'Dashboard', href: '/pharmacist', icon: LayoutDashboard },
+    { name: 'Billing', href: '/pharmacist/billing', icon: Pill },
   ];
 
   const receptionistLinks = [

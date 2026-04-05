@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { db, auth, secondaryAuth, storage } from '../firebase';
 import { 
   collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, 
-  query, where, getDoc, addDoc, getDocs 
+  query, where, getDoc, addDoc, getDocs, runTransaction 
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
@@ -248,12 +248,43 @@ export interface HospitalSettings {
 export interface InventoryItem {
   id: string;
   name: string;
-  category: string;
+  price: number;
   stock: number;
-  unitPrice: number;
-  expiryDate: string;
+  category: string;
+  unitPrice?: number; // Keep for legacy
+  expiryDate?: string;
   manufacturer?: string;
-  reorderLevel: number;
+  reorderLevel?: number;
+}
+
+export interface PharmacyBillMedicine {
+  name: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
+export interface PharmacyBill {
+  id: string;
+  billId: string;
+  patientName: string;
+  patientId?: string;
+  medicines: PharmacyBillMedicine[];
+  subtotal: number;
+  gst: number;
+  totalAmount: number;
+  createdAt: string;
+  createdBy: string;
+  role: "pharmacy";
+  status: "generated";
+}
+
+export interface AdminInvoice {
+  id: string;
+  billId: string;
+  totalAmount: number;
+  createdAt: string;
+  department: "pharmacy";
 }
 
 interface AppContextType {
@@ -273,6 +304,8 @@ interface AppContextType {
   bedBookings: BedBooking[];
   equipmentBookings: EquipmentBooking[];
   inventory: InventoryItem[];
+  bills: PharmacyBill[];
+  adminInvoices: AdminInvoice[];
   hospitalSettings: HospitalSettings | null;
   isAuthReady: boolean;
   login: (email: string, password?: string, role?: Role) => Promise<User>;
@@ -340,6 +373,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [bedBookings, setBedBookings] = useState<BedBooking[]>([]);
   const [equipmentBookings, setEquipmentBookings] = useState<EquipmentBooking[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [bills, setBills] = useState<PharmacyBill[]>([]);
+  const [adminInvoices, setAdminInvoices] = useState<AdminInvoice[]>([]);
   const [hospitalSettings, setHospitalSettings] = useState<HospitalSettings | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
@@ -1091,9 +1126,68 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const generatePharmacyBill = async (billData: Omit<PharmacyBill, 'id' | 'billId' | 'createdAt' | 'createdBy' | 'role' | 'status'>) => {
+    if (!currentUser) throw new Error("Must be logged in to generate bill");
+
+    const date = new Date();
+    const year = date.getFullYear();
+    const countQuery = await getDocs(collection(db, 'bills'));
+    const billNumber = (countQuery.size + 1).toString().padStart(4, '0');
+    const billId = `BILL-${year}-${billNumber}`;
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        // 1. Check stock for all medicines
+        for (const item of billData.medicines) {
+          const itemDocs = await getDocs(query(collection(db, 'inventory'), where('name', '==', item.name)));
+          if (itemDocs.empty) throw new Error(`Medicine ${item.name} not found in inventory`);
+          const itemDoc = itemDocs.docs[0];
+          const currentStock = itemDoc.data().stock;
+          if (currentStock < item.quantity) {
+            throw new Error(`Insufficient stock for ${item.name}. Available: ${currentStock}`);
+          }
+          // 2. Update inventory stock
+          transaction.update(itemDoc.ref, { 
+            stock: currentStock - item.quantity,
+            lastUpdated: new Date().toISOString()
+          });
+        }
+
+        // 3. Create bill in 'bills'
+        const billRef = doc(collection(db, 'bills'));
+        const fullBillData: PharmacyBill = {
+          ...billData,
+          id: billRef.id,
+          billId,
+          createdAt: new Date().toISOString(),
+          createdBy: currentUser.email,
+          role: "pharmacy",
+          status: "generated"
+        };
+        transaction.set(billRef, fullBillData);
+
+        // 4. Create record in 'adminInvoices'
+        const adminInvoiceRef = doc(collection(db, 'adminInvoices'));
+        const adminInvoiceData: AdminInvoice = {
+          id: adminInvoiceRef.id,
+          billId: billRef.id,
+          totalAmount: billData.totalAmount,
+          createdAt: new Date().toISOString(),
+          department: "pharmacy"
+        };
+        transaction.set(adminInvoiceRef, adminInvoiceData);
+      });
+      toast.success('Pharmacy bill generated successfully!');
+    } catch (error: any) {
+      console.error('Failed to generate pharmacy bill:', error);
+      toast.error(error.message || 'Failed to generate pharmacy bill');
+      throw error;
+    }
+  };
+
   return (
     <AppContext.Provider value={{
-      currentUser, users, departments, doctorSchedules, appointments, medicalRecords, prescriptions, invoices, labRequests, labReports, messages, beds, equipment, bedBookings, equipmentBookings, inventory, hospitalSettings, isAuthReady,
+      currentUser, users, departments, doctorSchedules, appointments, medicalRecords, prescriptions, invoices, labRequests, labReports, messages, beds, equipment, bedBookings, equipmentBookings, inventory, bills, hospitalSettings, isAuthReady,
       login, logout, registerPatient, bookAppointment, updateAppointmentStatus, addMedicalRecord,
       addPrescription, dispensePrescription, updatePrescriptionStatus, createAppointment, createLabReport, updateLabReportStatus,
       addDoctor, addReceptionist, addPharmacist, addLabTechnician, addDepartment, generateInvoice, payInvoice,
@@ -1103,6 +1197,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       bookBed, updateBedBooking, bookEquipment, updateEquipmentBooking,
       addInventoryItem, updateInventoryItem, deleteInventoryItem,
       createWalkInPatient, updateHospitalSettings,
+      generatePharmacyBill, adminInvoices,
     }}>
       {children}
     </AppContext.Provider>

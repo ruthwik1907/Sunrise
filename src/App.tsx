@@ -52,6 +52,7 @@ const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
 
 // Lazy load Staff Pages
 const PharmacistDashboard = React.lazy(() => import('./pages/pharmacist/Dashboard'));
+const PharmacistBilling = React.lazy(() => import('./pages/pharmacist/BillingPage'));
 const ReceptionistDashboard = React.lazy(() => import('./pages/receptionist/Dashboard'));
 const LabTechnicianDashboard = React.lazy(() => import('./pages/labtechnician/Dashboard'));
 
@@ -115,6 +116,7 @@ export default function App() {
             {/* Pharmacist Portal */}
             <Route path="/pharmacist" element={<DashboardLayout allowedRoles={['pharmacist']} />}>
               <Route index element={<PharmacistDashboard />} />
+              <Route path="billing" element={<PharmacistBilling />} />
               <Route path="*" element={<Navigate to="/pharmacist" replace />} />
             </Route>
 

@@ -10,7 +10,7 @@ import 'jspdf-autotable';
 type CategoryFilter = 'all' | 'consultation' | 'medication' | 'lab_test';
 
 export default function AdminInvoices() {
-  const { invoices, users } = useAppContext();
+  const { invoices, users, bills } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
@@ -23,9 +23,35 @@ export default function AdminInvoices() {
     return 'consultation';
   };
 
-  const filteredInvoices = invoices.filter(invoice => {
-    const patient = users.find(u => u.id === invoice.patientId);
-    const matchesSearch = (patient?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const combinedInvoices = [
+    ...invoices.map(inv => ({ ...inv, _source: 'invoice' })),
+    ...bills.map(bill => ({
+      id: bill.id,
+      patientId: bill.patientId || 'walk-in',
+      patientName: bill.patientName,
+      date: bill.createdAt,
+      dueDate: bill.createdAt,
+      amount: bill.totalAmount,
+      subtotal: bill.subtotal,
+      totalTaxAmount: bill.totalAmount - bill.subtotal,
+      status: 'paid' as const, // Pharmacy bills are considered paid upon generation in this system
+      description: `Pharmacy Bill: ${bill.billId}`,
+      items: bill.medicines.map((m, idx) => ({
+        id: `m-${idx}`,
+        description: m.name,
+        amount: m.price * m.quantity,
+        type: 'medication' as const,
+        taxRate: bill.gst,
+        taxAmount: (m.price * m.quantity * bill.gst) / 100
+      })),
+      _source: 'bill',
+      billId: bill.billId
+    }))
+  ];
+
+  const filteredInvoices = combinedInvoices.filter(invoice => {
+    const patientName = invoice.patientName || users.find(u => u.id === invoice.patientId)?.name || '';
+    const matchesSearch = patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (invoice.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
@@ -34,11 +60,11 @@ export default function AdminInvoices() {
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Revenue stats
-  const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
-  const pharmacyRevenue = invoices.filter(i => i.status === 'paid' && getInvoiceCategory(i) === 'medication').reduce((s, i) => s + i.amount, 0);
-  const consultRevenue = invoices.filter(i => i.status === 'paid' && getInvoiceCategory(i) === 'consultation').reduce((s, i) => s + i.amount, 0);
-  const labRevenue = invoices.filter(i => i.status === 'paid' && getInvoiceCategory(i) === 'lab_test').reduce((s, i) => s + i.amount, 0);
-  const totalUnpaid = invoices.filter(i => i.status === 'unpaid').reduce((s, i) => s + i.amount, 0);
+  const totalRevenue = combinedInvoices.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
+  const pharmacyRevenue = combinedInvoices.filter(i => i.status === 'paid' && getInvoiceCategory(i) === 'medication').reduce((s, i) => s + i.amount, 0);
+  const consultRevenue = combinedInvoices.filter(i => i.status === 'paid' && getInvoiceCategory(i) === 'consultation').reduce((s, i) => s + i.amount, 0);
+  const labRevenue = combinedInvoices.filter(i => i.status === 'paid' && getInvoiceCategory(i) === 'lab_test').reduce((s, i) => s + i.amount, 0);
+  const totalUnpaid = combinedInvoices.filter(i => i.status === 'unpaid').reduce((s, i) => s + i.amount, 0);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
