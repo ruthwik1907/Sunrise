@@ -4,21 +4,21 @@ import { useAppContext } from '../../context/AppContext';
 import { Users, UserPlus, Calendar, Building, Activity, ArrowRight, TrendingUp, DollarSign, Clock } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const { users, appointments, departments, invoices } = useAppContext();
+  const { users, appointments, departments, invoices, hospitalSettings } = useAppContext();
 
-  const totalDoctors = users.filter(u => u.role === 'doctor').length;
-  const totalPatients = users.filter(u => u.role === 'patient').length;
+  const totalDoctors = users.filter((u: any) => u.role === 'doctor').length;
+  const totalPatients = users.filter((u: any) => u.role === 'patient').length;
   const totalAppointments = appointments.length;
   const totalDepartments = departments.length;
   
-  const totalRevenue = invoices.filter(i => i.status === 'paid').reduce((sum, inv) => sum + inv.amount, 0);
-  const pendingRevenue = invoices.filter(i => i.status === 'unpaid').reduce((sum, inv) => sum + inv.amount, 0);
+  const totalRevenue = invoices.filter((i: any) => i.status === 'paid').reduce((sum: number, inv: any) => sum + inv.amount, 0);
+  const pendingRevenue = invoices.filter((i: any) => i.status === 'unpaid').reduce((sum: number, inv: any) => sum + inv.amount, 0);
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Hospital Administration</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{hospitalSettings?.name || 'Hospital'} Administration</h1>
           <p className="text-slate-500">Overview of hospital operations and performance.</p>
         </div>
         <div className="flex items-center gap-3">
@@ -105,9 +105,9 @@ export default function AdminDashboard() {
             </Link>
           </div>
           <div className="divide-y divide-slate-100 flex-1">
-            {appointments.slice(-5).reverse().map(apt => {
-              const patient = users.find(u => u.id === apt.patientId);
-              const doctor = users.find(u => u.id === apt.doctorId);
+            {appointments.slice(-5).reverse().map((apt: any) => {
+              const patient = users.find((u: any) => u.id === apt.patientId);
+              const doctor = users.find((u: any) => u.id === apt.doctorId);
               
               // Safely extract doctor's last name or fallback
               let doctorDisplayName = 'Unknown';
@@ -155,8 +155,8 @@ export default function AdminDashboard() {
               </Link>
             </div>
             <div className="divide-y divide-slate-100">
-              {departments.slice(0, 4).map(dept => {
-                const deptDoctors = users.filter(u => u.role === 'doctor' && u.departmentId === dept.id).length;
+              {departments.slice(0, 4).map((dept: any) => {
+                const deptDoctors = users.filter((u: any) => u.role === 'doctor' && u.departmentId === dept.id).length;
                 return (
                   <div key={dept.id} className="p-5 flex items-center justify-between hover:bg-slate-50 transition-colors">
                     <div className="flex items-center gap-3">

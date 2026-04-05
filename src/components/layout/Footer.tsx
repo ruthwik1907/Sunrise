@@ -1,8 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { useAppContext } from '../../context/AppContext';
 
 export const Footer = () => {
+  const { hospitalSettings } = useAppContext();
+  const hospitalName = hospitalSettings?.name || 'Hospital';
+
   return (
     <footer className="bg-slate-900 text-slate-300 py-12 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -11,10 +15,10 @@ export const Footer = () => {
           <div className="col-span-1 md:col-span-1">
             <Link to="/" className="flex items-center gap-2 text-indigo-400 mb-4">
               <Activity className="h-8 w-8" />
-              <span className="font-bold text-xl tracking-tight text-white">Sunrise Hospital</span>
+              <span className="font-bold text-xl tracking-tight text-white">{hospitalName}</span>
             </Link>
             <p className="text-sm text-slate-400 mb-6">
-              Providing world-class healthcare services with advanced technology and compassionate care. Your health is our priority.
+              Providing world-class healthcare services at {hospitalName} with advanced technology and compassionate care. Your health is our priority.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-slate-400 hover:text-white transition-colors"><Facebook className="h-5 w-5" /></a>
@@ -54,22 +58,22 @@ export const Footer = () => {
             <ul className="space-y-4 text-sm">
               <li className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-indigo-400 shrink-0 mt-1" />
-                <span>19/472, OLD CHECK POST CIRCLE,<br />OLD KADAPA ROAD,<br />BESIDE CANARA BANK, RENIGUNTA</span>
+                <span>{hospitalSettings?.address || 'Hospital Address'}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-indigo-400 shrink-0" />
-                <span>9494994220</span>
+                <span>{hospitalSettings?.phone || 'Hospital Phone'}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-indigo-400 shrink-0" />
-                <span>contact@Sunrise Hospital.com</span>
+                <span>{hospitalSettings?.email || 'contact@hospital.com'}</span>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
-          <p>&copy; {new Date().getFullYear()} Sunrise Hospital Hospital Management System. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {hospitalName} Hospital Management System. All rights reserved.</p>
         </div>
       </div>
     </footer>
