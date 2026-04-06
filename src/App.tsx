@@ -55,6 +55,10 @@ const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
 const PharmacistDashboard = React.lazy(() => import('./pages/pharmacist/Dashboard'));
 const PharmacistBilling = React.lazy(() => import('./pages/pharmacist/BillingPage'));
 const ReceptionistDashboard = React.lazy(() => import('./pages/receptionist/Dashboard'));
+const ReceptionistOPD = React.lazy(() => import('./pages/receptionist/OPD'));
+const ReceptionistClinical = React.lazy(() => import('./pages/receptionist/Clinical'));
+const ReceptionistBeds = React.lazy(() => import('./pages/receptionist/Beds'));
+const ReceptionistBilling = React.lazy(() => import('./pages/receptionist/Billing'));
 const LabTechnicianDashboard = React.lazy(() => import('./pages/labtechnician/Dashboard'));
 
 export default function App() {
@@ -125,6 +129,10 @@ export default function App() {
             {/* Receptionist Portal */}
             <Route path="/receptionist" element={<DashboardLayout allowedRoles={['receptionist']} />}>
               <Route index element={<ReceptionistDashboard />} />
+              <Route path="opd" element={<ReceptionistOPD />} />
+              <Route path="clinical" element={<ReceptionistClinical />} />
+              <Route path="beds" element={<ReceptionistBeds />} />
+              <Route path="billing" element={<ReceptionistBilling />} />
               <Route path="*" element={<Navigate to="/receptionist" replace />} />
             </Route>
 

@@ -4,7 +4,7 @@ import { useAppContext } from '../../context/AppContext';
 import {
   LayoutDashboard, Calendar, FileText, CreditCard, MessageSquare, Settings,
   Users, UserPlus, Activity, PieChart, Building, Loader2, Bed, Wrench,
-  Pill, Menu, X, LogOut, ChevronRight, Bell, Info
+  Pill, Menu, X, LogOut, ChevronRight, Bell, Info, Stethoscope
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -82,6 +82,10 @@ export const DashboardLayout = ({ allowedRoles }: { allowedRoles: string[] }) =>
 
   const receptionistLinks = [
     { name: 'Dashboard', href: '/receptionist', icon: LayoutDashboard },
+    { name: 'OPD & Registration', href: '/receptionist/opd', icon: UserPlus },
+    { name: 'Clinical Status', href: '/receptionist/clinical', icon: Stethoscope },
+    { name: 'Ward & Beds', href: '/receptionist/beds', icon: Bed },
+    { name: 'Billing Control', href: '/receptionist/billing', icon: CreditCard },
   ];
 
   const labTechnicianLinks = [

@@ -14,7 +14,13 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, import.meta.env.VITE_FIREBASE_DATABASE_ID);
+
+// Initialize Firestore with reliability settings
+import { initializeFirestore } from 'firebase/firestore';
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, import.meta.env.VITE_FIREBASE_DATABASE_ID || '(default)');
+
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 

@@ -46,11 +46,19 @@ service cloud.firestore {
       // Doctors are publicly visible (for home page listing before login)
       allow read: if isAuthenticated() || (resource != null && resource.data.role == 'doctor');
 
-      // New users can register themselves; admins can create any user
-      allow create: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      // New users can register themselves; admins/staff can create any patient
+      allow create: if isAuthenticated() && (
+        request.auth.uid == userId || 
+        isAdmin() || 
+        (isStaff() && request.resource.data.role == 'patient')
+      );
 
-      // Users can update their own profile; admins can update any
-      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      // Users can update their own profile; admins/staff can update any patient
+      allow update: if isAuthenticated() && (
+        isOwner(userId) || 
+        isAdmin() || 
+        (isStaff() && (resource != null && resource.data.role == 'patient'))
+      );
 
       // Only admins can (soft) delete users
       allow delete: if isAdmin();

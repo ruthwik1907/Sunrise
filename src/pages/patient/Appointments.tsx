@@ -4,7 +4,7 @@ import { useAppContext } from '../../context/AppContext';
 import { Plus, Calendar, Clock, FileText, Search, Filter, MoreVertical, X } from 'lucide-react';
 
 export default function PatientAppointments() {
-  const { currentUser, appointments, users, departments } = useAppContext();
+  const { currentUser, appointments, doctors, departments } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -13,7 +13,7 @@ export default function PatientAppointments() {
   const myAppointments = appointments
     .filter(a => a.patientId === currentUser.id)
     .filter(a => {
-      const doctor = users.find(u => u.id === a.doctorId);
+      const doctor = doctors.find(d => d.id === a.doctorId);
       const dept = departments.find(d => d.id === a.departmentId);
       const searchMatch = 
         (doctor?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,7 +102,7 @@ export default function PatientAppointments() {
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {myAppointments.map((apt) => {
-                const doctor = users.find(u => u.id === apt.doctorId);
+                const doctor = doctors.find(d => d.id === apt.doctorId);
                 const dept = departments.find(d => d.id === apt.departmentId);
                 
                 return (
