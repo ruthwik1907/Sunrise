@@ -48,7 +48,6 @@ const AdminDepartments = React.lazy(() => import('./pages/admin/Departments'));
 const AdminBeds = React.lazy(() => import('./pages/admin/Beds'));
 const AdminEquipment = React.lazy(() => import('./pages/admin/Equipment'));
 const AdminInvoices = React.lazy(() => import('./pages/admin/Invoices'));
-const AdminUsers = React.lazy(() => import('./pages/admin/Users'));
 const AdminReports = React.lazy(() => import('./pages/admin/Reports'));
 const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
 
@@ -104,7 +103,6 @@ export default function App() {
             {/* Admin Portal */}
             <Route path="/admin" element={<DashboardLayout allowedRoles={['admin']} />}>
               <Route index element={<AdminDashboard />} />
-              <Route path="users" element={<AdminUsers />} />
               <Route path="doctors" element={<AdminDoctors />} />
               <Route path="patients" element={<AdminPatients />} />
               <Route path="appointments" element={<AdminAppointments />} />

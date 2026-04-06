@@ -16,7 +16,7 @@ export default function PatientRecords() {
     .filter(p => p.patientId === currentUser.id)
     .filter(p => {
       const doctor = users.find(u => u.id === p.doctorId);
-      const medsString = p.items?.map(i => i.medicationName).join(' ') || '';
+      const medsString = p.items?.map(i => i.medicineName).join(' ') || '';
       return (doctor?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
              medsString.toLowerCase().includes(searchTerm.toLowerCase());
     })
@@ -58,13 +58,18 @@ export default function PatientRecords() {
       // Medications Table or Text
       if (rx.items && rx.items.length > 0) {
         const tableColumn = ["Medication", "Dosage", "Route", "Frequency", "Duration"];
-        const tableRows = rx.items.map((item: any) => [
-          item.medicationName,
-          item.dosage,
-          item.route,
-          item.frequency,
-          `${item.durationDays} days`
-        ]);
+        const tableRows = rx.items.map((item: any) => {
+          const freq = typeof item.frequency === 'object' 
+            ? [item.frequency.morning ? 'M' : null, item.frequency.afternoon ? 'A' : null, item.frequency.night ? 'N' : null].filter(Boolean).join('+')
+            : item.frequency;
+          return [
+            item.medicineName,
+            item.dosage,
+            item.route || 'Oral',
+            freq,
+            `${item.duration} days`
+          ];
+        });
         
         (doc as any).autoTable({
           startY: 70,
@@ -264,16 +269,29 @@ export default function PatientRecords() {
                         </div>
                         <div className="prose prose-sm prose-slate max-w-none">
                           {rx.items && rx.items.length > 0 ? (
-                            <ul className="space-y-2">
-                              {rx.items.map((item, idx) => (
-                                <li key={idx} className="text-slate-700">
-                                  <strong>{item.medicationName}</strong> - {item.dosage} ({item.route})<br/>
-                                  <span className="text-xs text-slate-500">{item.frequency} for {item.durationDays} days. {item.specialInstructions}</span>
-                                </li>
-                              ))}
+                            <ul className="space-y-4">
+                              {rx.items.map((item, idx) => {
+                                const freq = typeof item.frequency === 'object' 
+                                  ? [item.frequency.morning ? 'Morning' : null, item.frequency.afternoon ? 'Afternoon' : null, item.frequency.night ? 'Night' : null].filter(Boolean).join(' + ')
+                                  : item.frequency;
+                                return (
+                                  <li key={idx} className="flex flex-col gap-1 p-3 bg-white border border-slate-100 rounded-xl">
+                                    <div className="flex items-center justify-between">
+                                      <strong className="text-slate-900">{item.medicineName}</strong>
+                                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{item.route}</span>
+                                    </div>
+                                    <p className="text-xs text-slate-600">
+                                      <span className="font-bold">{item.dosage}</span> • {freq} • <span className="font-bold">{item.duration} days</span>
+                                    </p>
+                                    {item.specialInstructions && (
+                                      <p className="text-[10px] text-slate-400 italic">"{item.specialInstructions}"</p>
+                                    )}
+                                  </li>
+                                );
+                              })}
                             </ul>
                           ) : (
-                            <p className="text-slate-700 whitespace-pre-wrap">{rx.medications || 'No medications specified'}</p>
+                            <p className="text-slate-700 whitespace-pre-wrap">No formal medications catalogued.</p>
                           )}
                         </div>
                       </div>

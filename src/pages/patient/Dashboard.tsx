@@ -53,7 +53,8 @@ export default function PatientDashboard() {
       doc.setFontSize(10);
       doc.setTextColor(51, 65, 85); // Slate-700
       
-      const splitText = doc.splitTextToSize(rx.medications || 'No medications specified', 180);
+      const medsText = rx.items?.map((i: any) => `${i.medicineName} (${i.dosage})`).join(', ') || 'No medications';
+      const splitText = doc.splitTextToSize(medsText, 180);
       doc.text(splitText, 14, 85);
       
       // Footer
@@ -202,7 +203,7 @@ export default function PatientDashboard() {
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <p className="font-semibold text-slate-900">Prescribed by Dr. {doctor?.name || 'Unknown Doctor'}</p>
-                          <p className="text-2xl font-bold text-slate-900">{lastRecord?.date ? new Date(lastRecord.date).toLocaleDateString() : '—'}</p>
+                          <p className="text-2xl font-bold text-slate-900">{rx.date ? new Date(rx.date).toLocaleDateString() : '—'}</p>
                           <p className="text-xs text-slate-500 mt-0.5">{rx.date ? new Date(rx.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}</p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -217,7 +218,9 @@ export default function PatientDashboard() {
                         </div>
                       </div>
                       <div className="bg-emerald-50/50 border border-emerald-100 rounded-xl p-4">
-                        <p className="text-sm text-slate-700 line-clamp-2 font-medium">{rx.medications}</p>
+                        <p className="text-sm text-slate-700 line-clamp-2 font-medium">
+                          {rx.items?.map((i: any) => i.medicineName).join(', ') || 'No medications'}
+                        </p>
                       </div>
                     </div>
                   );
@@ -412,9 +415,9 @@ export default function PatientDashboard() {
                       {booking.status}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-slate-500">
-                    <span>From: {booking.startDate ? new Date(booking.startDate).toLocaleDateString() : '—'}</span>
-                    <span>To: {booking.endDate ? new Date(booking.endDate).toLocaleDateString() : '—'}</span>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                    <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5" /> {booking.date ? new Date(booking.date).toLocaleDateString() : '—'}</span>
+                    <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" /> {booking.startTime} - {booking.endTime || 'End'}</span>
                   </div>
                 </div>
               );

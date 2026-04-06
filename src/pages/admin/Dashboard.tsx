@@ -31,7 +31,7 @@ export default function AdminDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Link to="/admin/users?role=doctor" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all hover:scale-[1.02]">
+        <Link to="/admin/doctors" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all hover:scale-[1.02]">
           <div className="flex justify-between items-start mb-4">
             <div className="bg-indigo-50 p-3 rounded-xl text-indigo-600">
               <UserPlus className="h-6 w-6" />
@@ -46,7 +46,7 @@ export default function AdminDashboard() {
           </div>
         </Link>
         
-        <Link to="/admin/users?role=patient" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all hover:scale-[1.02]">
+        <Link to="/admin/patients" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all hover:scale-[1.02]">
           <div className="flex justify-between items-start mb-4">
             <div className="bg-emerald-50 p-3 rounded-xl text-emerald-600">
               <Users className="h-6 w-6" />

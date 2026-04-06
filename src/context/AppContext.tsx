@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { db, auth, secondaryAuth, storage } from '../firebase';
 import { 
   collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, 
-  query, where, getDoc, addDoc, getDocs, runTransaction 
+  query, where, getDoc, addDoc, getDocs, runTransaction, deleteField 
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
@@ -134,6 +134,8 @@ export interface PrescriptionItem {
   duration: string;
   isOutsourced?: boolean;
   instructions?: string;
+  route?: string; // e.g., Oral, IV, Topical
+  specialInstructions?: string;
 }
 
 export interface Prescription extends BaseMetadata {
@@ -272,11 +274,12 @@ export interface Equipment extends BaseMetadata {
 
 export interface BedBooking extends BaseMetadata {
   id: string;
-  bedId: string;
+  bedId?: string;
   patientId: string;
   startDate: string;
   endDate?: string;
-  status: 'active' | 'completed' | 'cancelled' | 'pending_admin';
+  status: 'active' | 'completed' | 'cancelled' | 'pending_admin' | 'requested';
+  reason?: string;
   totalCost?: number;
   isBilled?: boolean;
   billId?: string;
@@ -290,7 +293,7 @@ export interface EquipmentBooking extends BaseMetadata {
   date: string;
   startTime: string;
   endTime?: string;
-  status: 'active' | 'completed' | 'cancelled' | 'pending_admin';
+  status: 'active' | 'completed' | 'cancelled' | 'pending_admin' | 'requested';
   totalCost?: number;
   isBilled?: boolean;
   billId?: string;
@@ -399,6 +402,8 @@ interface AppContextType {
   addPharmacist: (data: Partial<User> & { password?: string }) => Promise<void>;
   addLabTechnician: (data: Partial<User> & { password?: string }) => Promise<void>;
   addDepartment: (data: Omit<Department, 'id'>) => Promise<void>;
+  updateDepartment: (id: string, data: Partial<Department>) => Promise<void>;
+  deleteDepartment: (id: string) => Promise<void>;
   createAppointment: (data: Omit<Appointment, 'id'>) => Promise<void>;
   createLabReport: (data: Omit<LabReport, 'id'>) => Promise<void>;
   generateInvoice: (data: Omit<Invoice, 'id' | 'status' | 'amount' | 'subtotal' | 'totalTaxAmount' | keyof BaseMetadata> & { items: Omit<InvoiceItem, 'id' | 'taxAmount'>[] }) => Promise<void>;
@@ -413,7 +418,7 @@ interface AppContextType {
   markNotificationRead: (notificationId: string) => Promise<void>;
   addNotification: (userId: string, title: string, message: string, type: AppNotification['type']) => Promise<void>;
   createAdminUser: (data: Partial<User> & { password?: string }) => Promise<void>;
-  updateAdminUser: (id: string, data: Partial<User>) => Promise<void>;
+  updateUser: (id: string, data: Partial<User>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   updateDoctorSchedule: (doctorId: string, schedules: Omit<DoctorSchedule, 'id'>[]) => Promise<void>;
   addBed: (data: Omit<Bed, 'id' | keyof BaseMetadata>) => Promise<void>;
@@ -549,23 +554,57 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
+  // Public Subscriptions (Accessible to everyone including guests)
+  // These run immediately without waiting for auth ready
+  useEffect(() => {
+    const publicSubs = [
+      onSnapshot(collection(db, 'departments'), snap => 
+        setDepartments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Department)))),
+      onSnapshot(collection(db, 'doctorSchedules'), snap => 
+        setDoctorSchedules(snap.docs.map(d => ({ id: d.id, ...d.data() } as DoctorSchedule)))),
+      onSnapshot(collection(db, 'beds'), snap => 
+        setBeds(snap.docs.map(d => ({ id: d.id, ...d.data() } as Bed)))),
+      onSnapshot(collection(db, 'equipment'), snap => 
+        setEquipment(snap.docs.map(d => ({ id: d.id, ...d.data() } as Equipment)))),
+      onSnapshot(doc(db, 'settings', 'general'), (doc) => 
+        doc.exists() && setHospitalSettings(doc.data() as HospitalSettings)),
+    ];
 
+    return () => publicSubs.forEach(unsub => unsub());
+  }, []);
+
+
+  // Auth-Dependent Subscriptions (Doctors view for guests vs auth users)
+  useEffect(() => {
+    if (!isAuthReady) return;
+    
+    const subs: (() => void)[] = [];
+
+    // Public view of doctors (Only if not already covered by staff listener)
+    if (!currentUser) {
+      subs.push(onSnapshot(query(collection(db, 'users'), where('role', '==', 'doctor'), where('status', '==', 'active')), snap => {
+        setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User)));
+      }));
+    }
+
+    return () => subs.forEach(unsub => unsub());
+  }, [isAuthReady, currentUser?.id]);
+
+  // Private Subscriptions (RBAC Protected)
   useEffect(() => {
     if (!isAuthReady || !currentUser) return;
 
     const isStaff = ['admin', 'doctor', 'receptionist', 'pharmacist', 'lab_technician', 'lab'].includes(currentUser.role);
     const isAdmin = currentUser.role === 'admin';
 
-    const subs = [
-      onSnapshot(collection(db, 'departments'), snap => setDepartments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Department)))),
-      
+    const privateSubs = [
       ...(isAdmin ? [
         onSnapshot(collection(db, 'users'), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User)))),
         onSnapshot(collection(db, 'auditLogs'), snap => setAuditLogs(snap.docs.map(d => ({ id: d.id, ...d.data() } as AuditLog)))),
         onSnapshot(collection(db, 'invoices'), snap => setInvoices(snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice)))),
         onSnapshot(collection(db, 'adminInvoices'), snap => setAdminInvoices(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)))),
       ] : [
-        ...(isStaff ? [onSnapshot(collection(db, 'users'), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User))))] : []),
+        ...(isStaff ? [onSnapshot(query(collection(db, 'users'), where('deleted', '==', false)), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User))))] : []),
         ...(!isStaff ? [onSnapshot(query(collection(db, 'users'), where('id', '==', currentUser.id)), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User))))] : [])
       ]),
 
@@ -591,18 +630,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       onSnapshot(isAdmin || currentUser.role === 'pharmacist' ? collection(db, 'inventory') : query(collection(db, 'inventory'), where('deleted', '==', false)), 
         snap => setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)))),
 
-      onSnapshot(collection(db, 'beds'), snap => setBeds(snap.docs.map(d => ({ id: d.id, ...d.data() } as Bed)))),
-      onSnapshot(collection(db, 'equipment'), snap => setEquipment(snap.docs.map(d => ({ id: d.id, ...d.data() } as Equipment)))),
       onSnapshot(collection(db, 'bedBookings'), snap => setBedBookings(snap.docs.map(d => ({ id: d.id, ...d.data() } as BedBooking)))),
       onSnapshot(collection(db, 'equipmentBookings'), snap => setEquipmentBookings(snap.docs.map(d => ({ id: d.id, ...d.data() } as EquipmentBooking)))),
-
-      onSnapshot(doc(db, 'settings', 'general'), doc => doc.exists() && setHospitalSettings(doc.data() as HospitalSettings)),
       
       onSnapshot(query(collection(db, 'notifications'), where('userId', '==', currentUser.id), where('deleted', '==', false)), 
         snap => setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() } as AppNotification)).sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()))),
     ];
 
-    return () => subs.forEach(unsub => unsub());
+    return () => privateSubs.forEach(unsub => unsub());
   }, [isAuthReady, currentUser]);
 
   const login = async (email: string, password?: string, role?: Role) => {
@@ -916,13 +951,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await signOut(secondaryAuth);
   };
 
-  const updateAdminUser = async (id: string, data: Partial<User>) => {
-    await updateDoc(doc(db, 'users', id), withUpdateMetadata(data));
-  };
-
-  const deleteUser = async (id: string) => {
-    await softDeleteDoc('users', id);
-  };
 
   const updateDoctorSchedule = async (doctorId: string, schedules: Omit<DoctorSchedule, 'id'>[]) => {
     const existing = doctorSchedules.filter(s => s.doctorId === doctorId);
@@ -965,26 +993,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const bookBed = async (data: Omit<BedBooking, 'id' | keyof BaseMetadata>) => {
     const ref = doc(collection(db, 'bedBookings'));
-    const book = withCreateMetadata({ id: ref.id, ...data, status: 'active' });
+    const book = withCreateMetadata({ id: ref.id, ...data, status: data.status || 'active' });
     await setDoc(ref, book);
-    await updateDoc(doc(db, 'beds', data.bedId), { status: 'occupied', patientId: data.patientId });
-    await recordAuditLog('create', 'clinical', data.bedId, `Booked bed ${data.bedId} for patient ${data.patientId}`);
+    if (data.bedId) {
+      await updateDoc(doc(db, 'beds', data.bedId), { status: 'occupied', patientId: data.patientId });
+      await recordAuditLog('create', 'clinical', data.bedId, `Booked bed ${data.bedId} for patient ${data.patientId}`);
+    }
   };
 
   const updateBedBooking = async (id: string, data: Partial<BedBooking>) => {
     await updateDoc(doc(db, 'bedBookings', id), withUpdateMetadata(data));
     if (data.status === 'completed') {
       const b = bedBookings.find(i => i.id === id);
-      if (b) await updateDoc(doc(db, 'beds', b.bedId), { status: 'available', patientId: undefined });
+      if (b && b.bedId) await updateDoc(doc(db, 'beds', b.bedId), { status: 'available', patientId: deleteField() });
     }
   };
 
   const bookEquipment = async (data: Omit<EquipmentBooking, 'id' | keyof BaseMetadata>) => {
     const ref = doc(collection(db, 'equipmentBookings'));
-    const book = withCreateMetadata({ id: ref.id, ...data, status: 'active' });
+    const book = withCreateMetadata({ id: ref.id, ...data, status: data.status || 'active' });
     await setDoc(ref, book);
-    await updateDoc(doc(db, 'equipment', data.equipmentId), { status: 'in_use' });
-    await recordAuditLog('create', 'clinical', data.equipmentId, `Booked equipment ${data.equipmentId} for patient ${data.patientId}`);
+    if (data.equipmentId) {
+      await updateDoc(doc(db, 'equipment', data.equipmentId), { status: 'in_use' });
+      await recordAuditLog('create', 'clinical', data.equipmentId, `Booked equipment ${data.equipmentId} for patient ${data.patientId}`);
+    }
   };
 
   const updateEquipmentBooking = async (id: string, data: Partial<EquipmentBooking>) => {
@@ -1028,6 +1060,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteInventoryItem = async (id: string) => {
     await softDeleteDoc('inventory', id);
+  };
+
+  const updateDepartment = async (id: string, data: Partial<Department>) => {
+    await updateDoc(doc(db, 'departments', id), data);
+    await recordAuditLog('update', 'system', id, `Updated department ${id}`, null, data);
+  };
+
+  const deleteDepartment = async (id: string) => {
+    await deleteDoc(doc(db, 'departments', id));
+    await recordAuditLog('delete', 'system', id, `Deleted department ${id}`);
+  };
+
+  const updateUser = async (id: string, data: Partial<User>) => {
+    await updateDoc(doc(db, 'users', id), withUpdateMetadata(data));
+    await recordAuditLog('update', 'users', id, `Updated user ${id}`, null, data);
+  };
+
+  const deleteUser = async (id: string) => {
+    await softDeleteDoc('users', id);
+    await recordAuditLog('delete', 'users', id, `Soft deleted user ${id}`);
   };
 
   const updateHospitalSettings = async (data: Partial<HospitalSettings>) => {
@@ -1198,7 +1250,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppContext.Provider value={{
       currentUser, users, departments, doctorSchedules, appointments, medicalRecords, prescriptions, invoices, labRequests, labReports, notifications, messages, beds, equipment, bedBookings, equipmentBookings, inventory, bills, adminInvoices, hospitalSettings, auditLogs, isAuthReady,
-      login, logout, registerPatient, createWalkInPatient, bookAppointment, updateAppointmentStatus, addMedicalRecord, addPrescription, dispensePrescription, updatePrescriptionStatus, addDoctor, addReceptionist, addPharmacist, addLabTechnician, addDepartment, createAppointment, createLabReport, generateInvoice, generateServiceInvoice, findPatient, payInvoice, sendMessage, markMessageRead, requestLabTest, addLabReport, updateLabReportStatus, markNotificationRead, addNotification, createAdminUser, updateAdminUser, deleteUser, updateDoctorSchedule, addBed, updateBed, deleteBed, addEquipment, updateEquipment, deleteEquipment, bookBed, updateBedBooking, bookEquipment, updateEquipmentBooking, uploadAvatar, uploadLabReport, addInventoryItem, updateInventoryItem, deleteInventoryItem, updateHospitalSettings, generatePharmacyBill,
+      login, logout, registerPatient, createWalkInPatient, bookAppointment, updateAppointmentStatus, addMedicalRecord, addPrescription, dispensePrescription, updatePrescriptionStatus, addDoctor, addReceptionist, addPharmacist, addLabTechnician, addDepartment, updateDepartment, deleteDepartment, createAppointment, createLabReport, generateInvoice, generateServiceInvoice, findPatient, payInvoice, sendMessage, markMessageRead, requestLabTest, addLabReport, updateLabReportStatus, markNotificationRead, addNotification, createAdminUser, updateUser, deleteUser, updateDoctorSchedule, addBed, updateBed, deleteBed, addEquipment, updateEquipment, deleteEquipment, bookBed, updateBedBooking, bookEquipment, updateEquipmentBooking, uploadAvatar, uploadLabReport, addInventoryItem, updateInventoryItem, deleteInventoryItem, updateHospitalSettings, generatePharmacyBill,
         softDeleteDoc,
         recordAuditLog,
         withCreateMetadata,

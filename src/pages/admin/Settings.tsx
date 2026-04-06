@@ -4,7 +4,7 @@ import {
   Settings as SettingsIcon, User as UserIcon, Bell, Shield, Key, Smartphone, Mail, 
   Save, Building, Globe, Database, Users, Plus, Edit2, Trash2, CheckCircle2, 
   History, ClipboardList, Search, Filter, Calendar as CalendarIcon, Clock,
-  Activity, UserPlus, ChevronRight, AlertTriangle, Lock, ShieldAlert
+  Activity, UserPlus, ChevronRight, AlertTriangle, Lock, ShieldAlert, Bed
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -155,30 +155,6 @@ export default function AdminSettings() {
           </button>
           
           <button
-            onClick={() => setActiveTab('security')}
-            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === 'security' 
-                ? 'bg-white text-indigo-700 shadow-md shadow-indigo-100/50 ring-1 ring-indigo-500/10' 
-                : 'text-slate-600 hover:bg-slate-100/80'
-            }`}
-          >
-            <Shield className={`h-5 w-5 ${activeTab === 'security' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            Security & Access
-          </button>
-
-          <button
-            onClick={() => setActiveTab('notifications')}
-            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === 'notifications' 
-                ? 'bg-white text-indigo-700 shadow-md shadow-indigo-100/50 ring-1 ring-indigo-500/10' 
-                : 'text-slate-600 hover:bg-slate-100/80'
-            }`}
-          >
-            <Bell className={`h-5 w-5 ${activeTab === 'notifications' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            Notifications
-          </button>
-
-          <button
             onClick={() => setActiveTab('admins')}
             className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
               activeTab === 'admins' 
@@ -203,18 +179,6 @@ export default function AdminSettings() {
           </button>
 
           <div className="h-px bg-slate-200 my-4 mx-2 hidden md:block"></div>
-
-          <button
-            onClick={() => setActiveTab('integrations')}
-            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === 'integrations' 
-                ? 'bg-white text-indigo-700 shadow-md shadow-indigo-100/50 ring-1 ring-indigo-500/10' 
-                : 'text-slate-600 hover:bg-slate-100/80'
-            }`}
-          >
-            <Globe className={`h-5 w-5 ${activeTab === 'integrations' ? 'text-indigo-600' : 'text-slate-400'}`} />
-            API & Integrations
-          </button>
 
           <button
             onClick={() => setActiveTab('maintenance')}
@@ -646,120 +610,9 @@ export default function AdminSettings() {
             </div>
           )}
 
-          {activeTab === 'integrations' && (
-            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-              <div className="flex items-center gap-4">
-                <div className="h-14 w-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100/50">
-                  <Database className="h-7 w-7" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900">API & External Integrations</h2>
-                  <p className="text-sm text-slate-500 mt-1">Manage machine-to-machine connections and HIS synchronization.</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* API Gateway Panel */}
-                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden group">
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-8">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
-                          <Key className="w-5 h-5" />
-                        </div>
-                        <h3 className="text-lg font-bold">API Gateway</h3>
-                      </div>
-                      <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">Operational</span>
-                    </div>
-
-                    <div className="space-y-6">
-                      <div>
-                        <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-2">Master API Key</label>
-                        <div className="flex items-center gap-2">
-                           <div className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 font-mono text-xs text-slate-300 truncate">
-                              ••••••••••••••••••••••••••••••••
-                           </div>
-                           <button className="p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all">
-                              <Search className="w-4 h-4" />
-                           </button>
-                        </div>
-                      </div>
-                      <p className="text-xs text-slate-400 leading-relaxed">Use this key for server-side HL7/FHIR integrations only. Never expose it in client-side code.</p>
-                    </div>
-                  </div>
-                  <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-600/20 blur-3xl rounded-full group-hover:scale-150 transition-all duration-700"></div>
-                </div>
-
-                {/* HIS Connector Status */}
-                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden">
-                   <div className="flex items-center justify-between mb-8">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
-                          <Activity className="w-5 h-5" />
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-900">HIS Connector</h3>
-                      </div>
-                      <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">Syncing...</span>
-                   </div>
-
-                   <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                         <div className="flex items-center gap-3">
-                            <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                            <span className="text-xs font-bold text-slate-700">HL7 v2.5 Engine</span>
-                         </div>
-                         <span className="text-[10px] font-black text-slate-400 uppercase">Latency: 24ms</span>
-                      </div>
-                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                         <div className="flex items-center gap-3">
-                            <div className="h-2 w-2 bg-slate-300 rounded-full"></div>
-                            <span className="text-xs font-bold text-slate-700">FHIR R4 Endpoint</span>
-                         </div>
-                         <span className="text-[10px] font-black text-slate-400 uppercase italic">Standby</span>
-                      </div>
-                   </div>
-                </div>
-              </div>
-
-              {/* Webhooks Section */}
-              <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-100/50 p-10 overflow-hidden relative">
-                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
-                    <div>
-                       <h3 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter">Event Webhooks</h3>
-                       <p className="text-sm text-slate-500 mt-1">Push clinical events to your external systems in real-time.</p>
-                    </div>
-                    <button className="px-6 py-3 bg-slate-900 text-white text-xs font-black rounded-2xl hover:bg-black transition-all shadow-xl shadow-slate-900/10">Configure New Hook</button>
-                 </div>
-
-                 <div className="space-y-3">
-                    {[
-                       { url: "https://his-sync.production.internal/hooks/v1", events: ["patient.register", "billing.complete"], active: true },
-                       { url: "https://lab-results.external.com/api/webhooks", events: ["lab.completed"], active: true },
-                       { url: "https://reports-analytics.hospital.org", events: ["invoice.paid"], active: false },
-                    ].map((hook, i) => (
-                       <div key={i} className="flex items-center gap-6 p-5 bg-slate-50/50 rounded-3xl border border-slate-100 group hover:bg-white hover:shadow-lg transition-all">
-                          <div className={`h-10 w-10 rounded-2xl flex items-center justify-center ${hook.active ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
-                             <Mail className="w-5 h-5" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                             <div className="flex items-center gap-3">
-                                <span className="text-sm font-bold text-slate-900 truncate">{hook.url}</span>
-                                {!hook.active && <span className="px-2 py-0.5 bg-slate-200 text-slate-500 text-[8px] font-black uppercase rounded tracking-wider">Muted</span>}
-                             </div>
-                             <div className="flex gap-2 mt-1.5 overflow-x-auto no-scrollbar pb-1">
-                                {hook.events.map(ev => (
-                                   <span key={ev} className="px-2 py-0.5 bg-indigo-50 text-indigo-600/60 text-[9px] font-black uppercase rounded-lg border border-indigo-100/50 whitespace-nowrap">{ev}</span>
-                                ))}
-                             </div>
-                          </div>
-                          <button className="p-3 text-slate-300 hover:text-slate-600 transition-all opacity-0 group-hover:opacity-100">
-                             <SettingsIcon className="w-4 h-4" />
-                          </button>
-                       </div>
-                    ))}
-                 </div>
-              </div>
-            </div>
+          {/* Clinical Checkout Tab Logic */}
+          {activeTab === 'maintenance' && (
+            <MaintenanceTab purgeCollection={purgeCollection} />
           )}
         </div>
       </div>
@@ -795,24 +648,44 @@ export default function AdminSettings() {
 
 function MaintenanceTab({ purgeCollection }: { purgeCollection: (name: string) => Promise<number> }) {
   const [password, setPassword] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
   const [targetCollection, setTargetCollection] = useState<string | null>(null);
   const [isPurging, setIsPurging] = useState(false);
 
-  const collections = [
-    { id: 'appointments', name: 'Appointments', count: 'All history' },
-    { id: 'auditLogs', name: 'Audit Logs', count: 'System tracking' },
-    { id: 'bills', name: 'Pharmacy Bills', count: 'Finance records' },
-    { id: 'prescriptions', name: 'Prescriptions', count: 'Medical orders' },
-    { id: 'medicalRecords', name: 'Medical Records', count: 'Patient history' },
-    { id: 'bedBookings', name: 'Bed Occupancy', count: 'In-patient data' },
-    { id: 'equipmentBookings', name: 'Equipment Usage', count: 'Resource logs' },
-    { id: 'inventory', name: 'Inventory Stocks', count: 'Pharmacy/Lab' },
-    { id: 'users', name: 'User Directory', count: 'Patients/Staff (Safeguarded)', caution: true },
-    { id: 'beds', name: 'Bed Registry', count: 'Infrastructure', caution: true },
-    { id: 'equipment', name: 'Equipment Registry', count: 'Medical devices', caution: true },
-    { id: 'departments', name: 'Clinical Departments', count: 'Core structure', caution: true },
-    { id: 'doctorSchedules', name: 'Doctor Rosters', count: 'Shift data' },
+  const categories = [
+    {
+      title: 'Clinical Operations',
+      description: 'Active medical records and patient session logs.',
+      icon: <Activity className="h-5 w-5 text-indigo-500" />,
+      collections: [
+        { id: 'appointments', name: 'Appointments', count: 'History' },
+        { id: 'prescriptions', name: 'Prescriptions', count: 'Medical Orders' },
+        { id: 'medicalRecords', name: 'Medical Records', count: 'Patient History' },
+        { id: 'doctorSchedules', name: 'Doctor Rosters', count: 'Shift Data' },
+      ]
+    },
+    {
+      title: 'Facility Resources',
+      description: 'Physical assets and usage tracking.',
+      icon: <Bed className="h-5 w-5 text-rose-500" />,
+      collections: [
+        { id: 'bedBookings', name: 'Bed Occupancy', count: 'Sessions' },
+        { id: 'equipmentBookings', name: 'Equipment Usage', count: 'Logs' },
+        { id: 'inventory', name: 'Inventory Stocks', count: 'Stock' },
+        { id: 'beds', name: 'Bed Registry', count: 'Infrastructure', caution: true },
+        { id: 'equipment', name: 'Equipment Registry', count: 'Devices', caution: true },
+      ]
+    },
+    {
+      title: 'System & Registry',
+      description: 'Core institutional structure and logs (High Caution).',
+      icon: <ShieldAlert className="h-5 w-5 text-amber-500" />,
+      collections: [
+        { id: 'auditLogs', name: 'Audit Logs', count: 'Tracking' },
+        { id: 'bills', name: 'Pharmacy Bills', count: 'Financial' },
+        { id: 'users', name: 'User Directory', count: 'Personnel', caution: true },
+        { id: 'departments', name: 'Clinical Departments', count: 'Structure', caution: true },
+      ]
+    }
   ];
 
   const handlePurge = async () => {
@@ -842,99 +715,110 @@ function MaintenanceTab({ purgeCollection }: { purgeCollection: (name: string) =
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
-      <div className="flex items-center gap-4">
-        <div className="h-14 w-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 shadow-sm border border-red-100/50">
-          <Database className="h-7 w-7" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Database Maintenance</h2>
-          <p className="text-sm text-slate-500 mt-1 uppercase font-black tracking-widest text-[10px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full inline-block">
-            High Privileged Operations
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-amber-50 border-l-4 border-amber-400 p-6 rounded-r-2xl">
-        <div className="flex gap-4">
-          <AlertTriangle className="h-6 w-6 text-amber-500 flex-shrink-0" />
-          <div className="space-y-1">
-            <h3 className="text-sm font-bold text-amber-900">Destructive Actions Ahead</h3>
-            <p className="text-xs text-amber-700 leading-relaxed font-semibold">
-              Purging a collection will permanently delete all records. This action cannot be undone. 
-              Active sessions and data currently in memory across hospital terminals may become inconsistent.
-            </p>
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-16">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 shadow-sm border border-red-100/50">
+            <Database className="h-7 w-7" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Database Maintenance</h2>
+            <p className="text-sm text-slate-500 mt-0.5">High-privileged system cleanup and data lifecycle management.</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {collections.map((col) => (
-          <div key={col.id} className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group">
-            <div className="flex justify-between items-start mb-4">
-              <div className="bg-slate-50 p-3 rounded-2xl group-hover:bg-red-50 transition-colors">
-                <ClipboardList className={`h-5 w-5 ${col.caution ? 'text-red-500' : 'text-slate-400'}`} />
+      <div className="bg-rose-50/50 border border-rose-100 p-6 rounded-[2rem] flex items-start gap-4">
+        <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-rose-600 shadow-sm flex-shrink-0">
+          <ShieldAlert className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-rose-900">Safety Protocol Active</p>
+          <p className="text-xs text-rose-600/80 font-medium mt-1 leading-relaxed">
+            All purge operations require a master password. Essential system accounts and core hospital settings are permanently safeguarded and cannot be deleted through this utility.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-12">
+        {categories.map((cat, i) => (
+          <div key={i} className="space-y-6">
+            <div className="flex items-center gap-3 px-2">
+              <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center shadow-sm">
+                {cat.icon}
               </div>
-              <button
-                onClick={() => setTargetCollection(col.id)}
-                className="px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-600 transition-all active:scale-95"
-              >
-                Purge
-              </button>
+              <div>
+                <h3 className="text-lg font-black text-slate-900">{cat.title}</h3>
+                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{cat.description}</p>
+              </div>
             </div>
-            <h4 className="text-sm font-bold text-slate-900">{col.name}</h4>
-            <p className="text-xs text-slate-400 font-medium mt-1 uppercase tracking-tight">{col.count}</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {cat.collections.map((col) => (
+                <div key={col.id} className="group bg-white border border-slate-100 rounded-[1.75rem] p-5 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all hover:-translate-y-1 flex items-center justify-between gap-4">
+                   <div className="min-w-0">
+                      <p className="text-sm font-extrabold text-slate-900 truncate">{col.name}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mt-0.5">{col.count}</p>
+                   </div>
+                   <button
+                     onClick={() => setTargetCollection(col.id)}
+                     className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 whitespace-nowrap ${
+                       col.caution ? 'bg-red-50 text-red-600 hover:bg-red-600 hover:text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-900 hover:text-white'
+                     }`}
+                   >
+                     Purge
+                   </button>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>
 
       {/* Confirmation Modal */}
       {targetCollection && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 border border-slate-100 animate-in zoom-in-95 duration-300">
-            <div className="text-center space-y-4">
-              <div className="h-16 w-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-                <ShieldAlert className="h-8 w-8" />
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-10 border border-slate-100 animate-in zoom-in-95 duration-300 text-center">
+            <div className="h-20 w-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-8 ring-red-50/50">
+              <ShieldAlert className="h-10 w-10" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Verify Destruction</h3>
+            <p className="text-sm text-slate-500 leading-relaxed mt-2">
+              Are you absolutely sure you want to purge all records from the <span className="font-bold text-red-600 uppercase tracking-widest">{targetCollection}</span> collection?
+            </p>
+
+            <div className="mt-8 space-y-4">
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-red-500 transition-colors" />
+                <input
+                  type="password"
+                  placeholder="Master System Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoFocus
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:bg-white focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all outline-none"
+                />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Verify Intent</h3>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                You are about to purge all records from <span className="font-bold text-red-600 uppercase">{targetCollection}</span>.
-                This operation requires the maintenance master password.
-              </p>
 
-              <div className="mt-8 space-y-4">
-                <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-red-500 transition-colors" />
-                  <input
-                    type="password"
-                    placeholder="Enter Master Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoFocus
-                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:bg-white focus:border-red-500 focus:ring-0 transition-all outline-none"
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => setTargetCollection(null)}
-                    disabled={isPurging}
-                    className="flex-1 py-4 bg-slate-100 text-slate-600 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all font-bold"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handlePurge}
-                    disabled={isPurging || !password}
-                    className="flex-1 py-4 bg-red-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-red-700 shadow-lg shadow-red-200 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-                  >
-                    {isPurging ? (
-                      <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    ) : (
-                      'Confirm Purge'
-                    )}
-                  </button>
-                </div>
+              <div className="flex flex-col gap-3 pt-4">
+                <button
+                  onClick={handlePurge}
+                  disabled={isPurging || !password}
+                  className="w-full py-4.5 bg-red-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-black shadow-xl shadow-red-100 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                >
+                  {isPurging ? (
+                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    'Authorize Full Purge'
+                  )}
+                </button>
+                <button
+                  onClick={() => setTargetCollection(null)}
+                  disabled={isPurging}
+                  className="w-full py-4 text-slate-500 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-50 transition-all"
+                >
+                  Cancel Operation
+                </button>
               </div>
             </div>
           </div>

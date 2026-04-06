@@ -72,10 +72,8 @@ export default function Doctors() {
                   <h3 className="text-lg font-bold text-slate-900 mb-1">{doc.name || 'Unknown Doctor'}</h3>
                   <p className="text-indigo-600 font-medium text-sm mb-3">{doc.specialty || 'General Practice'}</p>
                   
-                  <div className="flex items-center gap-1 text-sm text-slate-500 mb-4 bg-slate-50 px-3 py-1 rounded-full">
-                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                    <span className="font-medium text-slate-700">4.9</span>
-                    <span>(120+ reviews)</span>
+                  <div className="flex items-center gap-1 text-[10px] text-slate-400 mb-4 bg-slate-50 px-3 py-1.5 rounded-full font-black uppercase tracking-widest">
+                    Verified Consultant
                   </div>
 
                   <div className="w-full space-y-2 text-left mt-auto">

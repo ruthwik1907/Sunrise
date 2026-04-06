@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Plus, Edit, Trash2, Building, Users, Activity, MoreVertical, Loader2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Building, Users, Activity, MoreVertical, Loader2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+interface Department {
+  id: string;
+  name: string;
+  description: string;
+}
+
 export default function AdminDepartments() {
-  const { departments, addDepartment, users } = useAppContext();
+  const { departments, addDepartment, updateDepartment, deleteDepartment, users } = useAppContext();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingDept, setEditingDept] = useState<Department | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [name, setName] = useState('');
@@ -23,8 +32,7 @@ export default function AdminDepartments() {
       await addDepartment({ name, description });
       toast.success('Department added successfully!');
       setShowAddModal(false);
-      setName('');
-      setDescription('');
+      resetForm();
     } catch (error) {
       toast.error('Failed to add department. Please try again.');
     } finally {
@@ -32,16 +40,57 @@ export default function AdminDepartments() {
     }
   };
 
+  const handleEditClick = (dept: any) => {
+    setEditingDept(dept);
+    setName(dept.name);
+    setDescription(dept.description);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateDepartment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDept) return;
+    setIsSubmitting(true);
+    try {
+      await updateDepartment(editingDept.id, { name, description });
+      toast.success('Department updated successfully!');
+      setShowEditModal(false);
+      resetForm();
+    } catch (error) {
+      toast.error('Failed to update department.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteDepartment = async () => {
+    if (!deletingId) return;
+    try {
+      await deleteDepartment(deletingId);
+      toast.success('Department deleted successfully!');
+    } catch (error) {
+      toast.error('Failed to delete department.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const resetForm = () => {
+    setName('');
+    setDescription('');
+    setEditingDept(null);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Hospital Departments</h1>
-          <p className="text-slate-500 text-sm mt-1">Manage medical departments and their associated staff.</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Facilities & Departments</h1>
+          <p className="text-slate-500 font-medium mt-1">Manage clinical departments and facility organization.</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors"
+          className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-sm font-black uppercase tracking-widest rounded-2xl text-white bg-indigo-600 hover:bg-slate-900 shadow-xl shadow-indigo-100 transition-all"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Department
@@ -63,10 +112,18 @@ export default function AdminDepartments() {
                     <h3 className="text-lg font-bold text-slate-900">{dept.name}</h3>
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" title="Edit">
+                    <button 
+                      onClick={() => handleEditClick(dept)}
+                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors" 
+                      title="Edit"
+                    >
                       <Edit className="h-4 w-4" />
                     </button>
-                    <button className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Delete">
+                    <button 
+                      onClick={() => setDeletingId(dept.id)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" 
+                      title="Delete"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -87,14 +144,26 @@ export default function AdminDepartments() {
         })}
       </div>
 
-      {showAddModal && (
+      {(showAddModal || showEditModal) && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-100">
-              <h3 className="text-xl font-bold text-slate-900">Add New Department</h3>
-              <p className="text-sm text-slate-500 mt-1">Create a new medical department for the hospital.</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">{showEditModal ? 'Edit Department' : 'Add New Department'}</h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {showEditModal ? 'Update department details and description.' : 'Create a new medical department for the hospital.'}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => { setShowAddModal(false); setShowEditModal(false); resetForm(); }}
+                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
-            <form onSubmit={handleAddDepartment} className="p-6 space-y-4">
+            <form onSubmit={showEditModal ? handleUpdateDepartment : handleAddDepartment} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">Department Name</label>
                 <input
@@ -102,7 +171,7 @@ export default function AdminDepartments() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="block w-full px-3 py-2 border border-slate-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 sm:text-sm transition-colors"
+                  className="block w-full px-4 py-3 border border-slate-200 rounded-xl shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm transition-all"
                   placeholder="e.g. Cardiology"
                 />
               </div>
@@ -113,22 +182,22 @@ export default function AdminDepartments() {
                   rows={4}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="block w-full px-3 py-2 border border-slate-200 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 sm:text-sm transition-colors resize-none"
+                  className="block w-full px-4 py-3 border border-slate-200 rounded-xl shadow-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm transition-all resize-none"
                   placeholder="Brief description of the department's focus and services..."
                 />
               </div>
               <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition-colors"
+                  onClick={() => { setShowAddModal(false); setShowEditModal(false); resetForm(); }}
+                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 hover:bg-slate-100 transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  className="px-6 py-2.5 bg-slate-900 hover:bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-slate-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                 >
                   {isSubmitting ? (
                     <>
@@ -136,11 +205,37 @@ export default function AdminDepartments() {
                       Saving...
                     </>
                   ) : (
-                    'Save Department'
+                    showEditModal ? 'Update Department' : 'Save Department'
                   )}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {deletingId && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 animate-in fade-in zoom-in-95 duration-200 text-center">
+            <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 ring-8 ring-red-50/50">
+              <Trash2 className="h-10 w-10" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Delete Department?</h3>
+            <p className="text-slate-500 font-medium mt-2">This action will permanently remove the department. This cannot be undone.</p>
+            <div className="flex flex-col gap-3 mt-8">
+              <button 
+                onClick={handleDeleteDepartment}
+                className="w-full py-4 bg-red-600 text-white rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-slate-900 shadow-xl shadow-red-100 transition-all"
+              >
+                Yes, Delete it
+              </button>
+              <button 
+                onClick={() => setDeletingId(null)}
+                className="w-full py-4 bg-slate-50 text-slate-700 rounded-2xl text-sm font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+              >
+                No, Keep it
+              </button>
+            </div>
           </div>
         </div>
       )}

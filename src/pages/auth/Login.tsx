@@ -59,12 +59,13 @@ export default function Login() {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <Link to="/" className="flex justify-center items-center gap-2 text-indigo-600 mb-6 hover:opacity-80 transition-opacity">
-          <div className="bg-indigo-600 p-2 rounded-xl">
-            <Activity className="h-8 w-8 text-white" />
+        <div className="flex justify-center items-center gap-4 mb-8 hover:opacity-90 transition-all group">
+          <img src="/images/logo.png" alt="Sunrise Hospital" className="h-16 w-auto drop-shadow-sm group-hover:scale-105 transition-transform" />
+          <div className="flex flex-col">
+            <span className="text-2xl font-black tracking-tighter text-slate-900 uppercase leading-none">Sunrise</span>
+            <span className="text-[10px] font-black tracking-[0.3em] text-indigo-600 uppercase mt-1">Hospital Group</span>
           </div>
-          <span className="text-2xl font-extrabold tracking-tight text-slate-900">Sunrise Hospital</span>
-        </Link>
+        </div>
         <h2 className="mt-2 text-center text-3xl font-extrabold text-slate-900 tracking-tight">Welcome back</h2>
         <p className="mt-2 text-center text-sm text-slate-600">
           New patient?{' '}

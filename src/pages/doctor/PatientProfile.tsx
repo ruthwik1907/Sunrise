@@ -225,11 +225,11 @@ export default function DoctorPatientProfile() {
     e.preventDefault();
     try {
       await bookBed({
-        bedId: bedBookingData.bedId,
         patientId: patient.id,
         startDate: bedBookingData.startDate,
         endDate: bedBookingData.endDate || '',
-        status: 'pending_admin'
+        reason: bedBookingData.reason,
+        status: 'requested'
       });
       setShowBedBookingModal(false);
       setBedBookingData({ bedId: '', startDate: '', endDate: '', reason: '' });
@@ -316,7 +316,7 @@ export default function DoctorPatientProfile() {
             <Activity className="h-4 w-4 mr-2" /> Lab
           </button>
           <button onClick={() => setShowBedBookingModal(true)} className="flex-1 md:flex-none inline-flex items-center justify-center px-4 py-2 border border-slate-200 text-sm font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all border-dashed">
-            <Bed className="h-4 w-4 mr-2" /> Bed
+            <Bed className="h-4 w-4 mr-2" /> Request Bed
           </button>
           <button onClick={() => setShowEquipmentBookingModal(true)} className="flex-1 md:flex-none inline-flex items-center justify-center px-4 py-2 border border-slate-200 text-sm font-bold rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all border-dashed">
             <Wrench className="h-4 w-4 mr-2" /> Eq.

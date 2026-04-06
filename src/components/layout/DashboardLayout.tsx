@@ -64,9 +64,8 @@ export const DashboardLayout = ({ allowedRoles }: { allowedRoles: string[] }) =>
 
   const adminLinks = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { name: 'User Management', href: '/admin/users', icon: Users },
-    { name: 'Doctors', href: '/admin/doctors', icon: UserPlus },
-    { name: 'Patients', href: '/admin/patients', icon: Users },
+    { name: 'Staff Registry', href: '/admin/doctors', icon: Users },
+    { name: 'Patient Directory', href: '/admin/patients', icon: Users },
     { name: 'Appointments', href: '/admin/appointments', icon: Calendar },
     { name: 'Departments', href: '/admin/departments', icon: Building },
     { name: 'Beds', href: '/admin/beds', icon: Bed },
@@ -266,7 +265,7 @@ export const DashboardLayout = ({ allowedRoles }: { allowedRoles: string[] }) =>
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
             {/* Drawer */}
             <div
-              className="absolute left-0 top-0 h-full w-72 bg-white shadow-2xl"
+              className="absolute left-0 top-0 h-full w-72 bg-white shadow-2xl flex flex-col"
               onClick={e => e.stopPropagation()}
             >
               {/* Close button */}
@@ -279,13 +278,15 @@ export const DashboardLayout = ({ allowedRoles }: { allowedRoles: string[] }) =>
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <SidebarContent />
+              <div className="flex-1 overflow-hidden">
+                <SidebarContent />
+              </div>
             </div>
           </div>
         )}
 
-        {/* ── Desktop Sidebar (always visible on lg+) ── */}
-        <aside className="hidden lg:flex lg:flex-col w-60 bg-white border-r border-slate-200 flex-shrink-0">
+        {/* Sidebar — Desktop */}
+        <aside className="hidden lg:block w-72 bg-white border-r border-slate-200 flex-shrink-0 sticky top-14 h-[calc(100vh-3.5rem)]">
           <SidebarContent />
         </aside>
 
