@@ -4,8 +4,8 @@ import { useAppContext } from '../../context/AppContext';
 import { ArrowRight, Activity, Users, Calendar, Shield, Heart, Award, Clock, PhoneCall, Stethoscope, CheckCircle2 } from 'lucide-react';
 
 export default function Home() {
-  const { hospitalSettings, users, departments } = useAppContext();
-  const doctorCount = users.filter(u => u.role === 'doctor').length;
+  const { hospitalSettings, users, doctors, departments } = useAppContext();
+  const doctorCount = doctors.length;
   const patientCount = users.filter(u => u.role === 'patient').length;
   const specialtyCount = departments.length;
   const scrollingImages = [

@@ -4,11 +4,11 @@ import { useAppContext } from '../../context/AppContext';
 import { Search, Filter, Star, MapPin, Calendar, ArrowRight } from 'lucide-react';
 
 export default function Doctors() {
-  const { users, departments } = useAppContext();
+  const { doctors, departments } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState('');
 
-  const doctors = users.filter(u => u.role === 'doctor');
+  // doctors are already filtered by role in context
 
   const filteredDoctors = doctors.filter(doc => {
     const matchesSearch = (doc.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 

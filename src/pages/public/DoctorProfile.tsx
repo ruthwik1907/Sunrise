@@ -5,10 +5,10 @@ import { ArrowLeft, Calendar, Star, MapPin, Clock, Award, Shield, Phone, Mail, U
 
 export default function DoctorProfile() {
   const { id } = useParams<{ id: string }>();
-  const { users, departments } = useAppContext();
+  const { doctors, departments } = useAppContext();
   const navigate = useNavigate();
 
-  const doctor = users.find(u => u.id === id && u.role === 'doctor');
+  const doctor = doctors.find(u => u.id === id);
   const department = departments.find(d => d.id === doctor?.departmentId);
 
   if (!doctor) {

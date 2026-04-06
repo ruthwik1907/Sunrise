@@ -5,7 +5,7 @@ import { Calendar, Clock, User, Stethoscope, FileText, CheckCircle2, AlertCircle
 import toast from 'react-hot-toast';
 
 export default function BookAppointment() {
-  const { currentUser, users, departments, bookAppointment, doctorSchedules, appointments, hospitalSettings } = useAppContext();
+  const { currentUser, users, doctors: allDoctors, departments, bookAppointment, doctorSchedules, appointments, hospitalSettings } = useAppContext();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const preselectedDoctor = searchParams.get('doctor');
@@ -31,14 +31,14 @@ export default function BookAppointment() {
 
   useEffect(() => {
     if (preselectedDoctor) {
-      const doc = users.find(u => u.id === preselectedDoctor);
+      const doc = allDoctors.find(u => u.id === preselectedDoctor);
       if (doc) setDepartmentId(doc.departmentId || '');
     }
-  }, [preselectedDoctor, users]);
+  }, [preselectedDoctor, allDoctors]);
 
   const doctors = useMemo(() => {
-    return users.filter(u => u.role === 'doctor' && (!departmentId || u.departmentId === departmentId));
-  }, [users, departmentId]);
+    return allDoctors.filter(u => !departmentId || u.departmentId === departmentId);
+  }, [allDoctors, departmentId]);
 
   useEffect(() => {
     if (!doctorId || !date) {

@@ -721,16 +721,37 @@ function MaintenanceTab({ purgeCollection }: { purgeCollection: (name: string) =
             <p className="text-sm text-slate-500 mt-0.5">High-privileged system cleanup and data lifecycle management.</p>
           </div>
         </div>
+
+        <a 
+          href="https://console.firebase.google.com/u/0/project/gen-lang-client-0989848023/authentication/users" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-2xl transition-all hover:scale-105"
+        >
+          <ShieldAlert className="w-4 h-4 text-amber-400" />
+          Manage Firebase Auth Console
+        </a>
       </div>
 
       <div className="bg-rose-50/50 border border-rose-100 p-6 rounded-[2rem] flex items-start gap-4">
         <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-rose-600 shadow-sm flex-shrink-0">
           <ShieldAlert className="h-5 w-5" />
         </div>
-        <div>
-          <p className="text-sm font-bold text-rose-900">Safety Protocol Active</p>
-          <p className="text-xs text-rose-600/80 font-medium mt-1 leading-relaxed">
-            All purge operations require a master password. Essential system accounts and core hospital settings are permanently safeguarded and cannot be deleted through this utility.
+        <div className="flex-1">
+          <p className="text-sm font-bold text-rose-900 tracking-tight">Safety Protocol & Free Auth-Sync</p>
+          <p className="text-xs text-rose-600/80 font-medium mt-1.5 leading-relaxed">
+            All purge operations require a master password. **Note:** Purging the 'Users' collection deletes Firestore profiles but DOES NOT remove records from Firebase Authentication. 
+          </p>
+          <div className="mt-4 p-4 bg-white/50 rounded-xl border border-rose-100/50">
+            <p className="text-[10px] font-black uppercase tracking-widest text-rose-700 mb-2">Free Deletion Sync:</p>
+            <ol className="text-[10px] text-rose-600 space-y-1 ml-4 list-decimal font-bold">
+              <li>Open your project terminal locally.</li>
+              <li>Save your Firebase Service Account key as <code className="bg-rose-100 px-1 rounded text-red-700">service-account.json</code> in the root or <code className="bg-rose-100 px-1 rounded text-red-700">scripts</code> folder.</li>
+              <li>Run <code className="bg-rose-100 px-1 rounded text-red-700 font-black">node scripts/sync-auth-free.cjs</code></li>
+            </ol>
+          </div>
+          <p className="text-[10px] text-rose-500 mt-4 font-bold italic">
+            * <span className="font-black text-rose-700">admin@hospital.com</span> is permanently safeguarded and will never be purged.
           </p>
         </div>
       </div>

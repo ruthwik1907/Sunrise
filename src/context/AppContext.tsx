@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { db, auth, secondaryAuth, storage } from '../firebase';
 import {
   collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc,
-  query, where, getDoc, addDoc, getDocs, runTransaction, deleteField
+  query, where, getDoc, addDoc, getDocs, runTransaction, writeBatch, deleteField
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import {
@@ -367,6 +367,7 @@ export interface AdminInvoice extends BaseMetadata {
 interface AppContextType {
   currentUser: User | null;
   users: User[];
+  doctors: User[];
   departments: Department[];
   doctorSchedules: DoctorSchedule[];
   appointments: Appointment[];
@@ -453,6 +454,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [doctors, setDoctors] = useState<User[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [doctorSchedules, setDoctorSchedules] = useState<DoctorSchedule[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -559,8 +561,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  // Public Subscriptions (Accessible to everyone including guests)
-  // These run immediately without waiting for auth ready
+  // Public Subscriptions (Always available for Home/Booking)
   useEffect(() => {
     const publicSubs = [
       onSnapshot(collection(db, 'departments'), snap =>
@@ -573,27 +574,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setEquipment(snap.docs.map(d => ({ id: d.id, ...d.data() } as Equipment)))),
       onSnapshot(doc(db, 'settings', 'general'), (doc) =>
         doc.exists() && setHospitalSettings(doc.data() as HospitalSettings)),
+      // PUBLIC DOCTORS LIST (Always available for Home/Booking)
+      onSnapshot(query(collection(db, 'users'), where('role', '==', 'doctor'), where('status', '==', 'active'), where('deleted', '==', false)), snap => {
+        setDoctors(snap.docs.map(d => ({ id: d.id, ...d.data() } as User)));
+      })
     ];
 
     return () => publicSubs.forEach(unsub => unsub());
   }, []);
-
-
-  // Auth-Dependent Subscriptions (Doctors view for guests vs auth users)
-  useEffect(() => {
-    if (!isAuthReady) return;
-
-    const subs: (() => void)[] = [];
-
-    // Public view of doctors (Only if not already covered by staff listener)
-    if (!currentUser) {
-      subs.push(onSnapshot(query(collection(db, 'users'), where('role', '==', 'doctor'), where('status', '==', 'active')), snap => {
-        setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User)));
-      }));
-    }
-
-    return () => subs.forEach(unsub => unsub());
-  }, [isAuthReady, currentUser?.id]);
 
   // Private Subscriptions (RBAC Protected)
   useEffect(() => {
@@ -647,44 +635,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password?: string, role?: Role) => {
     try {
+      console.log("[AppContext:login:v3] Attempting login for:", email);
       const fixLabRole = (role: string): Role => {
         if (role === 'lab' || role === 'labtechnician' || role === 'lab_technician') return 'lab_technician';
         return role as Role;
       };
+      
       const normalizedRole = role ? fixLabRole(role) : undefined;
       const result = await signInWithEmailAndPassword(auth, email, password || '123456');
       const user = result.user;
       const userDoc = await getDoc(doc(db, 'users', user.uid));
 
-      if (!userDoc.exists()) {
-        const isAdminEmail = email === 'admin@hospital.com';
-        if (normalizedRole === 'patient' || isAdminEmail) {
-          const newUser: User = withCreateMetadata({
-            id: user.uid,
-            name: user.displayName || email.split('@')[0],
-            email: user.email || email,
-            role: isAdminEmail ? 'admin' : (normalizedRole || 'patient'),
-            status: 'active',
-            avatar: `https://picsum.photos/seed/${user.uid}/200/200`,
-          });
-          if (newUser.role === 'patient') {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = (now.getMonth() + 1).toString().padStart(2, '0');
-            const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-            newUser.mrn = `SH${year}${month}${random}`;
-          }
-          await setDoc(doc(db, 'users', user.uid), newUser);
-          setCurrentUser(newUser);
-          return newUser;
-        } else {
-          throw new Error('Account not found. Contact administrator.');
-        }
-      } else {
-        const userData = { id: userDoc.id, ...userDoc.data() } as User;
-        setCurrentUser(userData);
-        return userData;
+      const isAdminEmail = email.toLowerCase() === 'admin@hospital.com';
+
+      // RECOVERY: If Admin record is missing or deleted, restore it immediately
+      if (isAdminEmail && (!userDoc.exists() || userDoc.data()?.deleted)) {
+        const admin: User = withCreateMetadata({
+          id: user.uid,
+          name: 'System Admin',
+          email: 'admin@hospital.com',
+          role: 'admin',
+          status: 'active',
+          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin'
+        });
+        await setDoc(doc(db, 'users', user.uid), admin);
+        setCurrentUser(admin);
+        return admin;
       }
+
+      // STANDARD GHOST/DELETED CHECK
+      if (!userDoc.exists() || userDoc.data()?.deleted) {
+        // Deny login for missing user documents (they must be re-added or re-registered)
+        throw new Error('This account was purged or deactivated. Please contact the System Administrator to restore your profile.');
+      }
+
+      const userData = { id: userDoc.id, ...userDoc.data() } as User;
+      setCurrentUser(userData);
+      return userData;
     } catch (error: any) {
       console.error('Login failed:', error);
       throw error;
@@ -708,24 +695,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const registerPatient = async (data: Partial<User> & { password?: string }) => {
-    const result = await createUserWithEmailAndPassword(auth, data.email || '', data.password || '123456');
-    const user = result.user;
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const patient: User = withCreateMetadata({
-      id: user.uid,
-      name: data.name || 'New Patient',
-      email: data.email || '',
-      role: 'patient',
-      status: 'active',
-      mrn: `SH${year}${month}${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-      ...data
-    });
-    delete (patient as any).password;
-    await setDoc(doc(db, 'users', user.uid), patient);
-    await recordAuditLog('create', 'users', user.uid, `Registered patient ${patient.name}`, null, patient);
-    return patient;
+    try {
+      const result = await createUserWithEmailAndPassword(auth, data.email || '', data.password || '123456');
+      const user = result.user;
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const patient: User = withCreateMetadata({
+        id: user.uid,
+        name: data.name || 'New Patient',
+        email: data.email || '',
+        role: 'patient',
+        status: 'active',
+        mrn: `SH${year}${month}${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+        ...data
+      });
+      delete (patient as any).password;
+      await setDoc(doc(db, 'users', user.uid), patient);
+      await recordAuditLog('create', 'users', user.uid, `Registered patient ${patient.name}`, null, patient);
+      return patient;
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      throw error;
+    }
   };
 
   const createWalkInPatient = async (data: Partial<User>) => {
@@ -806,7 +798,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       'auth/operation-not-allowed':
         '❌ Email/Password sign-in is DISABLED in Firebase Console. Go to Authentication → Sign-in method → Enable Email/Password.',
       'auth/email-already-in-use':
-        '❌ This email is already registered. Use a different email or check existing users.',
+        '❌ This email is already in the Authentication system, but no profile was found in our records (orphaned record from a purge). Please delete this user from the Firebase Console (Authentication tab) or use a different email.',
       'auth/invalid-email':
         '❌ Invalid email address. Please check the email field.',
       'auth/weak-password':
@@ -1018,11 +1010,39 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
 
   const updateDoctorSchedule = async (doctorId: string, schedules: Omit<DoctorSchedule, 'id'>[]) => {
-    const existing = doctorSchedules.filter(s => s.doctorId === doctorId);
-    for (const s of existing) await deleteDoc(doc(db, 'doctorSchedules', s.id));
-    for (const s of schedules) {
-      const ref = doc(collection(db, 'doctorSchedules'));
-      await setDoc(ref, { id: ref.id, ...s });
+    try {
+      const batch = writeBatch(db);
+      
+      // 1. Get existing schedules to delete
+      const q = query(collection(db, 'doctorSchedules'), where('doctorId', '==', doctorId));
+      const snapshot = await getDocs(q);
+      
+      snapshot.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      // 2. Add new schedules
+      console.log("[AppContext:updateDoctorSchedule:v2] Saving schedules:", schedules);
+      schedules.forEach(s => {
+        const newDocRef = doc(collection(db, 'doctorSchedules'));
+        
+        // Comprehensive sanitization: remove undefined, but keep null/empty if intended
+        const sanitized: any = {};
+        Object.keys(s).forEach(key => {
+          const val = (s as any)[key];
+          if (val !== undefined) {
+            sanitized[key] = val;
+          }
+        });
+
+        batch.set(newDocRef, { ...sanitized, id: newDocRef.id });
+      });
+
+      await batch.commit();
+      await recordAuditLog('update', 'doctorSchedules', doctorId, `Updated schedule for doctor ${doctorId}`);
+    } catch (error) {
+      console.error('Update schedule error:', error);
+      throw error;
     }
   };
 
@@ -1295,7 +1315,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       let deletedCount = 0;
       for (const d of snap.docs) {
         // SAFEGUARD: Never delete the currently logged-in Admin or the initial system admin
-        if (name === 'users' && (d.id === currentUser?.id || d.data().role === 'admin')) {
+        if (name === 'users' && (d.id === currentUser?.id || d.data().role === 'admin' || d.data().email === 'admin@hospital.com')) {
           continue;
         }
         // SAFEGUARD: Never delete essential system settings
@@ -1319,7 +1339,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AppContext.Provider value={{
-      currentUser, users, departments, doctorSchedules, appointments, medicalRecords, prescriptions, invoices, labRequests, labReports, notifications, messages, beds, equipment, bedBookings, equipmentBookings, inventory, bills, adminInvoices, hospitalSettings, auditLogs, isAuthReady,
+      currentUser, users, doctors, departments, doctorSchedules, appointments, medicalRecords, prescriptions, invoices, labRequests, labReports, notifications, messages, beds, equipment, bedBookings, equipmentBookings, inventory, bills, adminInvoices, hospitalSettings, auditLogs, isAuthReady,
       login, logout, registerPatient, createWalkInPatient, bookAppointment, updateAppointmentStatus, addMedicalRecord, addPrescription, dispensePrescription, updatePrescriptionStatus, addDoctor, addReceptionist, addPharmacist, addLabTechnician, addDepartment, updateDepartment, deleteDepartment, createAppointment, createLabReport, generateInvoice, generateServiceInvoice, findPatient, payInvoice, sendMessage, markMessageRead, requestLabTest, addLabReport, updateLabReportStatus, markNotificationRead, addNotification, createAdminUser, updateUser, deleteUser, updateDoctorSchedule, addBed, updateBed, deleteBed, addEquipment, updateEquipment, deleteEquipment, bookBed, updateBedBooking, bookEquipment, updateEquipmentBooking, uploadAvatar, uploadLabReport, addInventoryItem, updateInventoryItem, deleteInventoryItem, updateHospitalSettings, generatePharmacyBill,
       softDeleteDoc,
       recordAuditLog,

@@ -116,15 +116,15 @@ export default function Settings() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
-                    <input type="tel" defaultValue="+1 (555) 123-4567" className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+                    <input type="tel" defaultValue={currentUser.phone} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Date of Birth</label>
-                    <input type="date" defaultValue="1985-06-15" className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-slate-700" />
+                    <input type="date" defaultValue={currentUser.dob} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-slate-700" />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-1">Address</label>
-                    <textarea rows={3} defaultValue="123 Main St, Apt 4B&#10;New York, NY 10001" className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" />
+                    <textarea rows={3} defaultValue={currentUser.address} className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" />
                   </div>
                 </div>
               </div>
