@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { db, auth, secondaryAuth, storage } from '../firebase';
-import { 
-  collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, 
-  query, where, getDoc, addDoc, getDocs, runTransaction, deleteField 
+import {
+  collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc,
+  query, where, getDoc, addDoc, getDocs, runTransaction, deleteField
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { 
-  signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged 
+import {
+  signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged
 } from 'firebase/auth';
 import toast from 'react-hot-toast';
 import { sendAppointmentConfirmationEmail, sendLabReportReadyEmail, sendPrescriptionReadyEmail } from '../services/emailService';
@@ -563,15 +563,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // These run immediately without waiting for auth ready
   useEffect(() => {
     const publicSubs = [
-      onSnapshot(collection(db, 'departments'), snap => 
+      onSnapshot(collection(db, 'departments'), snap =>
         setDepartments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Department)))),
-      onSnapshot(collection(db, 'doctorSchedules'), snap => 
+      onSnapshot(collection(db, 'doctorSchedules'), snap =>
         setDoctorSchedules(snap.docs.map(d => ({ id: d.id, ...d.data() } as DoctorSchedule)))),
-      onSnapshot(collection(db, 'beds'), snap => 
+      onSnapshot(collection(db, 'beds'), snap =>
         setBeds(snap.docs.map(d => ({ id: d.id, ...d.data() } as Bed)))),
-      onSnapshot(collection(db, 'equipment'), snap => 
+      onSnapshot(collection(db, 'equipment'), snap =>
         setEquipment(snap.docs.map(d => ({ id: d.id, ...d.data() } as Equipment)))),
-      onSnapshot(doc(db, 'settings', 'general'), (doc) => 
+      onSnapshot(doc(db, 'settings', 'general'), (doc) =>
         doc.exists() && setHospitalSettings(doc.data() as HospitalSettings)),
     ];
 
@@ -582,7 +582,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Auth-Dependent Subscriptions (Doctors view for guests vs auth users)
   useEffect(() => {
     if (!isAuthReady) return;
-    
+
     const subs: (() => void)[] = [];
 
     // Public view of doctors (Only if not already covered by staff listener)
@@ -613,33 +613,33 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         ...(!isStaff ? [onSnapshot(query(collection(db, 'users'), where('id', '==', currentUser.id)), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User))))] : [])
       ]),
 
-      onSnapshot(isAdmin || isStaff ? collection(db, 'appointments') : query(collection(db, 'appointments'), where('patientId', '==', currentUser.id)), 
+      onSnapshot(isAdmin || isStaff ? collection(db, 'appointments') : query(collection(db, 'appointments'), where('patientId', '==', currentUser.id)),
         snap => setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Appointment)))),
 
-      onSnapshot(isAdmin || isStaff ? collection(db, 'medicalRecords') : query(collection(db, 'medicalRecords'), where('patientId', '==', currentUser.id)), 
+      onSnapshot(isAdmin || isStaff ? collection(db, 'medicalRecords') : query(collection(db, 'medicalRecords'), where('patientId', '==', currentUser.id)),
         snap => setMedicalRecords(snap.docs.map(d => ({ id: d.id, ...d.data() } as MedicalRecord)))),
-      onSnapshot(isAdmin || isStaff ? collection(db, 'prescriptions') : query(collection(db, 'prescriptions'), where('patientId', '==', currentUser.id)), 
+      onSnapshot(isAdmin || isStaff ? collection(db, 'prescriptions') : query(collection(db, 'prescriptions'), where('patientId', '==', currentUser.id)),
         snap => setPrescriptions(snap.docs.map(d => ({ id: d.id, ...d.data() } as Prescription)))),
 
-      onSnapshot(isAdmin || isStaff ? collection(db, 'labRequests') : query(collection(db, 'labRequests'), where('patientId', '==', currentUser.id)), 
+      onSnapshot(isAdmin || isStaff ? collection(db, 'labRequests') : query(collection(db, 'labRequests'), where('patientId', '==', currentUser.id)),
         snap => setLabRequests(snap.docs.map(d => ({ id: d.id, ...d.data() } as LabRequest)))),
-      onSnapshot(isAdmin || isStaff ? collection(db, 'labReports') : query(collection(db, 'labReports'), where('patientId', '==', currentUser.id)), 
+      onSnapshot(isAdmin || isStaff ? collection(db, 'labReports') : query(collection(db, 'labReports'), where('patientId', '==', currentUser.id)),
         snap => setLabReports(snap.docs.map(d => ({ id: d.id, ...d.data() } as LabReport)))),
 
-      onSnapshot(isAdmin || ['pharmacist', 'receptionist'].includes(currentUser.role) ? collection(db, 'bills') : query(collection(db, 'bills'), where('patientId', '==', currentUser.id)), 
+      onSnapshot(isAdmin || ['pharmacist', 'receptionist'].includes(currentUser.role) ? collection(db, 'bills') : query(collection(db, 'bills'), where('patientId', '==', currentUser.id)),
         snap => setBills(snap.docs.map(d => ({ id: d.id, ...d.data() } as PharmacyBill)))),
-      
-      onSnapshot(isAdmin || isStaff ? collection(db, 'invoices') : query(collection(db, 'invoices'), where('patientId', '==', currentUser.id)), 
+
+      onSnapshot(isAdmin || isStaff ? collection(db, 'invoices') : query(collection(db, 'invoices'), where('patientId', '==', currentUser.id)),
         snap => setInvoices(snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice)))),
 
-      onSnapshot(isAdmin || currentUser.role === 'pharmacist' ? collection(db, 'inventory') : query(collection(db, 'inventory'), where('deleted', '==', false)), 
+      onSnapshot(isAdmin || currentUser.role === 'pharmacist' ? collection(db, 'inventory') : query(collection(db, 'inventory'), where('deleted', '==', false)),
         snap => setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)))),
 
       onSnapshot(collection(db, 'bedBookings'), snap => setBedBookings(snap.docs.map(d => ({ id: d.id, ...d.data() } as BedBooking)))),
       onSnapshot(collection(db, 'equipmentBookings'), snap => setEquipmentBookings(snap.docs.map(d => ({ id: d.id, ...d.data() } as EquipmentBooking)))),
-      
-      onSnapshot(query(collection(db, 'notifications'), where('userId', '==', currentUser.id), where('deleted', '==', false)), 
-        snap => setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() } as AppNotification)).sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()))),
+
+      onSnapshot(query(collection(db, 'notifications'), where('userId', '==', currentUser.id), where('deleted', '==', false)),
+        snap => setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() } as AppNotification)).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()))),
     ];
 
     return () => privateSubs.forEach(unsub => unsub());
@@ -655,7 +655,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const result = await signInWithEmailAndPassword(auth, email, password || '123456');
       const user = result.user;
       const userDoc = await getDoc(doc(db, 'users', user.uid));
-      
+
       if (!userDoc.exists()) {
         const isAdminEmail = email === 'admin@hospital.com';
         if (normalizedRole === 'patient' || isAdminEmail) {
@@ -667,13 +667,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             status: 'active',
             avatar: `https://picsum.photos/seed/${user.uid}/200/200`,
           });
-            if (newUser.role === 'patient') {
-              const now = new Date();
-              const year = now.getFullYear();
-              const month = (now.getMonth() + 1).toString().padStart(2, '0');
-              const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-              newUser.mrn = `SH${year}${month}${random}`;
-            }
+          if (newUser.role === 'patient') {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            newUser.mrn = `SH${year}${month}${random}`;
+          }
           await setDoc(doc(db, 'users', user.uid), newUser);
           setCurrentUser(newUser);
           return newUser;
@@ -702,7 +702,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error('Logout error:', error);
       // Final attempt to clear state even on error
-      await signOut(auth).catch(() => {});
+      await signOut(auth).catch(() => { });
       setCurrentUser(null);
     }
   };
@@ -967,7 +967,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const markNotificationRead = async (notificationId: string) => {
     try {
       const notifRef = doc(db, 'notifications', notificationId);
-      await updateDoc(notifRef, { 
+      await updateDoc(notifRef, {
         read: true,
         updatedAt: new Date().toISOString(),
         updatedBy: currentUser?.id || 'system'
@@ -996,17 +996,24 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const createAdminUser = async (data: Partial<User> & { password?: string }) => {
-    const res = await createUserWithEmailAndPassword(secondaryAuth, data.email || '', data.password || '123456');
-    const admin: User = withCreateMetadata({
-      id: res.user.uid,
-      name: data.name || 'Admin',
-      email: data.email || '',
-      role: 'admin',
-      status: 'active',
-      ...data
-    });
-    await setDoc(doc(db, 'users', res.user.uid), admin);
-    await signOut(secondaryAuth);
+    try {
+      const res = await createUserWithEmailAndPassword(secondaryAuth, data.email || '', data.password || '123456');
+      const admin: User = withCreateMetadata({
+        id: res.user.uid,
+        name: data.name || 'Admin',
+        email: data.email || '',
+        role: 'admin',
+        status: 'active',
+        ...data
+      });
+      delete (admin as any).password;
+      await setDoc(doc(db, 'users', res.user.uid), admin);
+      await signOut(secondaryAuth);
+      toast.success(`Admin ${admin.name} added successfully!`);
+    } catch (error: any) {
+      toast.error(handleAuthError(error, 'admin'), { duration: 6000 });
+      throw error;
+    }
   };
 
 
@@ -1156,7 +1163,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const year = now.getFullYear();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
     const billId = `SHPH${year}${month}${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
-    
+
     const bill: PharmacyBill = withCreateMetadata({
       id: ref.id,
       billId,
@@ -1164,7 +1171,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       ...billData
     });
     await setDoc(ref, bill);
-    
+
     // Also record as admin invoice for ledger
     const adminRef = doc(collection(db, 'adminInvoices'));
     await setDoc(adminRef, withCreateMetadata({
@@ -1191,7 +1198,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 mins
 
     await setDoc(doc(db, 'resetOtps', email), { email, otp, expiresAt });
-    
+
     // In a real production app, you would call a backend service to send actual SMS/Email.
     // For this implementation, we simulate the 'sent' status.
     console.log(`[OTP SERVICE] Sending OTP ${otp} to ${email}`);
@@ -1231,7 +1238,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const month = (now.getMonth() + 1).toString().padStart(2, '0');
       const random = Math.floor(Math.random() * 100000).toString().padStart(5, '0');
       const invoiceId = `${prefix}${year}${month}${random}`;
-      
+
       const subtotal = items.reduce((acc, item) => acc + (item.amount * item.quantity), 0);
       const totalTaxAmount = items.reduce((acc, item) => acc + (item.amount * item.quantity * (item.taxRate / 100)), 0);
       const totalAmount = subtotal + totalTaxAmount;
@@ -1242,10 +1249,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         patientId,
         patientName: patient?.name || 'Unknown',
         patientPhone: patient?.phone || 'N/A',
-        items: items.map(item => ({ 
-          ...item, 
-          id: Math.random().toString(36).substr(2, 9), 
-          taxAmount: item.amount * item.quantity * (item.taxRate / 100) 
+        items: items.map(item => ({
+          ...item,
+          id: Math.random().toString(36).substr(2, 9),
+          taxAmount: item.amount * item.quantity * (item.taxRate / 100)
         })),
         amount: totalAmount,
         subtotal,
@@ -1258,7 +1265,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
 
       await setDoc(ref, invoice);
-      
+
       // Mirror to adminInvoices for historical ledger
       const adminRef = doc(collection(db, 'adminInvoices'));
       await setDoc(adminRef, withCreateMetadata({
@@ -1284,12 +1291,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       const q = query(collection(db, name));
       const snap = await getDocs(q);
-      
+
       let deletedCount = 0;
       for (const d of snap.docs) {
         // SAFEGUARD: Never delete the currently logged-in Admin or the initial system admin
         if (name === 'users' && (d.id === currentUser?.id || d.data().role === 'admin')) {
-          continue; 
+          continue;
         }
         // SAFEGUARD: Never delete essential system settings
         if (name === 'settings') {
@@ -1299,7 +1306,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         await deleteDoc(d.ref);
         deletedCount++;
       }
-      
+
       await recordAuditLog('delete', 'system', 'all', `Purged collection: ${name}. ${deletedCount} records removed.`);
       toast.success(`Purged ${deletedCount} records from ${name}`);
       return deletedCount;
@@ -1314,14 +1321,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     <AppContext.Provider value={{
       currentUser, users, departments, doctorSchedules, appointments, medicalRecords, prescriptions, invoices, labRequests, labReports, notifications, messages, beds, equipment, bedBookings, equipmentBookings, inventory, bills, adminInvoices, hospitalSettings, auditLogs, isAuthReady,
       login, logout, registerPatient, createWalkInPatient, bookAppointment, updateAppointmentStatus, addMedicalRecord, addPrescription, dispensePrescription, updatePrescriptionStatus, addDoctor, addReceptionist, addPharmacist, addLabTechnician, addDepartment, updateDepartment, deleteDepartment, createAppointment, createLabReport, generateInvoice, generateServiceInvoice, findPatient, payInvoice, sendMessage, markMessageRead, requestLabTest, addLabReport, updateLabReportStatus, markNotificationRead, addNotification, createAdminUser, updateUser, deleteUser, updateDoctorSchedule, addBed, updateBed, deleteBed, addEquipment, updateEquipment, deleteEquipment, bookBed, updateBedBooking, bookEquipment, updateEquipmentBooking, uploadAvatar, uploadLabReport, addInventoryItem, updateInventoryItem, deleteInventoryItem, updateHospitalSettings, generatePharmacyBill,
-        softDeleteDoc,
-        recordAuditLog,
-        withCreateMetadata,
-        withUpdateMetadata,
-        sendResetOTP,
-        verifyResetOTP,
-        resetPasswordWithOTP,
-        purgeCollection
+      softDeleteDoc,
+      recordAuditLog,
+      withCreateMetadata,
+      withUpdateMetadata,
+      sendResetOTP,
+      verifyResetOTP,
+      resetPasswordWithOTP,
+      purgeCollection
     }}>
       {children}
     </AppContext.Provider>

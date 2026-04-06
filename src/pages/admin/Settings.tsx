@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext, User, HospitalSettings, AuditLog } from '../../context/AppContext';
-import { 
-  Settings as SettingsIcon, User as UserIcon, Bell, Shield, Key, Smartphone, Mail, 
-  Save, Building, Globe, Database, Users, Plus, Edit2, Trash2, CheckCircle2, 
+import {
+  Settings as SettingsIcon, User as UserIcon, Bell, Shield, Key, Smartphone, Mail,
+  Save, Building, Globe, Database, Users, Plus, Edit2, Trash2, CheckCircle2,
   History, ClipboardList, Search, Filter, Calendar as CalendarIcon, Clock,
   Activity, UserPlus, ChevronRight, AlertTriangle, Lock, ShieldAlert, Bed
 } from 'lucide-react';
@@ -16,7 +16,7 @@ export default function AdminSettings() {
   const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '', phone: '' });
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   // Local state for audit log filtering
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAction, setFilterAction] = useState<string>('all');
@@ -71,10 +71,8 @@ export default function AdminSettings() {
       await createAdminUser(newAdmin);
       setShowAddAdmin(false);
       setNewAdmin({ name: '', email: '', password: '', phone: '' });
-      toast.success('Admin created successfully');
     } catch (error) {
-      console.error(error);
-      toast.error('Failed to create admin');
+      console.error('Failed to create admin:', error);
     }
   };
 
@@ -113,7 +111,7 @@ export default function AdminSettings() {
 
   const filteredLogs = auditLogs
     .filter(log => {
-      const matchesSearch = searchTerm === '' || 
+      const matchesSearch = searchTerm === '' ||
         log.details?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.module?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -129,7 +127,7 @@ export default function AdminSettings() {
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">System Settings</h1>
           <p className="text-slate-500 text-sm mt-1">Configure your hospital management platform and security policies.</p>
         </div>
-        <button 
+        <button
           onClick={() => handleSaveSettings()}
           disabled={isSaving}
           className="inline-flex items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-2xl shadow-lg shadow-indigo-200 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
@@ -144,23 +142,21 @@ export default function AdminSettings() {
         <div className="w-full md:w-72 bg-slate-50/50 border-r border-slate-100 p-6 flex flex-row md:flex-col gap-2 overflow-x-auto no-scrollbar scroll-smooth">
           <button
             onClick={() => setActiveTab('general')}
-            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === 'general' 
-                ? 'bg-white text-indigo-700 shadow-md shadow-indigo-100/50 ring-1 ring-indigo-500/10' 
+            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'general'
+                ? 'bg-white text-indigo-700 shadow-md shadow-indigo-100/50 ring-1 ring-indigo-500/10'
                 : 'text-slate-600 hover:bg-slate-100/80'
-            }`}
+              }`}
           >
             <Building className={`h-5 w-5 ${activeTab === 'general' ? 'text-indigo-600' : 'text-slate-400'}`} />
             General Information
           </button>
-          
+
           <button
             onClick={() => setActiveTab('admins')}
-            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === 'admins' 
-                ? 'bg-white text-indigo-700 shadow-md shadow-indigo-100/50 ring-1 ring-indigo-500/10' 
+            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'admins'
+                ? 'bg-white text-indigo-700 shadow-md shadow-indigo-100/50 ring-1 ring-indigo-500/10'
                 : 'text-slate-600 hover:bg-slate-100/80'
-            }`}
+              }`}
           >
             <Users className={`h-5 w-5 ${activeTab === 'admins' ? 'text-indigo-600' : 'text-slate-400'}`} />
             Admin Users
@@ -168,11 +164,10 @@ export default function AdminSettings() {
 
           <button
             onClick={() => setActiveTab('audit')}
-            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === 'audit' 
-                ? 'bg-white text-indigo-700 shadow-md shadow-indigo-100/50 ring-1 ring-indigo-500/10' 
+            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'audit'
+                ? 'bg-white text-indigo-700 shadow-md shadow-indigo-100/50 ring-1 ring-indigo-500/10'
                 : 'text-slate-600 hover:bg-slate-100/80'
-            }`}
+              }`}
           >
             <History className={`h-5 w-5 ${activeTab === 'audit' ? 'text-indigo-600' : 'text-slate-400'}`} />
             Audit Logs
@@ -182,11 +177,10 @@ export default function AdminSettings() {
 
           <button
             onClick={() => setActiveTab('maintenance')}
-            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === 'maintenance' 
-                ? 'bg-red-50 text-red-700 shadow-md shadow-red-100/50 ring-1 ring-red-500/10' 
+            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'maintenance'
+                ? 'bg-red-50 text-red-700 shadow-md shadow-red-100/50 ring-1 ring-red-500/10'
                 : 'text-slate-600 hover:bg-red-50/50 hover:text-red-600 transition-colors'
-            }`}
+              }`}
           >
             <Database className={`h-5 w-5 ${activeTab === 'maintenance' ? 'text-red-600' : 'text-slate-400'}`} />
             Database Maintenance
@@ -211,38 +205,38 @@ export default function AdminSettings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700">Hospital Name</label>
-                    <input 
-                       type="text" 
-                       value={formSettings.name}
-                       onChange={(e) => setFormSettings({...formSettings, name: e.target.value})}
-                       className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium"
-                       placeholder="Sunrise Hospital"
+                    <input
+                      type="text"
+                      value={formSettings.name}
+                      onChange={(e) => setFormSettings({ ...formSettings, name: e.target.value })}
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium"
+                      placeholder="Sunrise Hospital"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700">Contact Email</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       value={formSettings.email}
-                      onChange={(e) => setFormSettings({...formSettings, email: e.target.value})}
+                      onChange={(e) => setFormSettings({ ...formSettings, email: e.target.value })}
                       className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700">Phone</label>
-                    <input 
-                      type="tel" 
+                    <input
+                      type="tel"
                       value={formSettings.phone}
-                      onChange={(e) => setFormSettings({...formSettings, phone: e.target.value})}
+                      onChange={(e) => setFormSettings({ ...formSettings, phone: e.target.value })}
                       className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700">GST Registration No.</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={formSettings.gstNumber}
-                      onChange={(e) => setFormSettings({...formSettings, gstNumber: e.target.value})}
+                      onChange={(e) => setFormSettings({ ...formSettings, gstNumber: e.target.value })}
                       className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium"
                     />
                   </div>
@@ -250,10 +244,10 @@ export default function AdminSettings() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">Full Address</label>
-                  <textarea 
+                  <textarea
                     rows={4}
                     value={formSettings.address}
-                    onChange={(e) => setFormSettings({...formSettings, address: e.target.value})}
+                    onChange={(e) => setFormSettings({ ...formSettings, address: e.target.value })}
                     className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-sm font-medium resize-none"
                   />
                 </div>
@@ -284,29 +278,29 @@ export default function AdminSettings() {
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-slate-900">Password Policy</h3>
                       <p className="text-sm text-slate-500 mt-1 mb-8">Set complexity requirements for system users.</p>
-                      
+
                       <div className="space-y-6">
-                         <div className="flex items-center justify-between">
-                            <div>
-                               <p className="text-sm font-bold text-slate-800">Require Special Characters</p>
-                               <p className="text-xs text-slate-500">At least one @, #, $ symbol</p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input 
-                                type="checkbox" 
-                                checked={formSettings.security.requireSpecialChars}
-                                onChange={() => updateSecurity('requireSpecialChars', !formSettings.security.requireSpecialChars)}
-                                className="sr-only peer" 
-                                />
-                                <div className="w-12 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
-                            </label>
-                         </div>
-                        
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-bold text-slate-800">Require Special Characters</p>
+                            <p className="text-xs text-slate-500">At least one @, #, $ symbol</p>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formSettings.security.requireSpecialChars}
+                              onChange={() => updateSecurity('requireSpecialChars', !formSettings.security.requireSpecialChars)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-12 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
+                          </label>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-6 pt-2">
                           <div className="space-y-2">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Min Length</label>
-                            <input 
-                              type="number" 
+                            <input
+                              type="number"
                               value={formSettings.security.minPasswordLength}
                               onChange={(e) => updateSecurity('minPasswordLength', parseInt(e.target.value))}
                               className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
@@ -314,8 +308,8 @@ export default function AdminSettings() {
                           </div>
                           <div className="space-y-2">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Reset (Days)</label>
-                            <input 
-                              type="number" 
+                            <input
+                              type="number"
                               value={formSettings.security.forcePasswordResetDays}
                               onChange={(e) => updateSecurity('forcePasswordResetDays', parseInt(e.target.value))}
                               className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
@@ -338,11 +332,11 @@ export default function AdminSettings() {
                         <p className="text-sm text-slate-500 mt-1">Force users to verify identities via mobile.</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={formSettings.security.twoFactorAuth}
                           onChange={() => updateSecurity('twoFactorAuth', !formSettings.security.twoFactorAuth)}
-                          className="sr-only peer" 
+                          className="sr-only peer"
                         />
                         <div className="w-12 h-7 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
                       </label>
@@ -378,19 +372,19 @@ export default function AdminSettings() {
                     <div key={item.id} className="flex items-center justify-between p-6 bg-slate-50/50 rounded-[1.5rem] border border-slate-100">
                       <div className="flex items-center gap-4">
                         <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
-                           <Icon className="w-5 h-5" />
+                          <Icon className="w-5 h-5" />
                         </div>
                         <div>
-                           <p className="text-sm font-bold text-slate-900">{item.label}</p>
-                           <p className="text-[10px] text-slate-500 mt-0.5 max-w-[140px] truncate uppercase font-bold tracking-wider">{item.sub}</p>
+                          <p className="text-sm font-bold text-slate-900">{item.label}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5 max-w-[140px] truncate uppercase font-bold tracking-wider">{item.sub}</p>
                         </div>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={(formSettings.notifications as any)[item.id]}
                           onChange={() => updateNotifications(item.id as any)}
-                          className="sr-only peer" 
+                          className="sr-only peer"
                         />
                         <div className="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-4 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
                       </label>
@@ -408,7 +402,7 @@ export default function AdminSettings() {
                   <h2 className="text-2xl font-bold">Admin Management</h2>
                   <p className="text-slate-400 text-sm mt-1 max-w-sm">Securely manage users with administrative privileges across the platform.</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowAddAdmin(!showAddAdmin)}
                   className="relative z-10 px-6 py-3 bg-white text-slate-900 text-sm font-extrabold rounded-2xl shadow-xl transition-all hover:scale-[1.05] active:scale-[0.95]"
                 >
@@ -421,59 +415,61 @@ export default function AdminSettings() {
                 <div className="bg-indigo-50/50 p-10 rounded-[2.5rem] border border-indigo-100 border-dashed animate-in zoom-in-95 duration-200">
                   <div className="flex items-center gap-3 mb-8">
                     <div className="h-10 w-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white">
-                        <UserPlus className="w-5 h-5" />
+                      <UserPlus className="w-5 h-5" />
                     </div>
                     <h3 className="text-xl font-bold text-slate-900">Provision Administrator</h3>
                   </div>
-                  
+
                   <form onSubmit={handleAddAdmin} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700">Full Operational Name</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           required
                           value={newAdmin.name}
-                          onChange={e => setNewAdmin({...newAdmin, name: e.target.value})}
+                          onChange={e => setNewAdmin({ ...newAdmin, name: e.target.value })}
                           className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm font-medium"
                           placeholder="e.g. Dr. John Carter"
                         />
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700">Secure Email</label>
-                        <input 
-                          type="email" 
+                        <input
+                          type="email"
                           required
                           value={newAdmin.email}
-                          onChange={e => setNewAdmin({...newAdmin, email: e.target.value})}
+                          onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })}
                           className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm font-medium"
                         />
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700">Initial Credential</label>
                         <div className="relative">
-                          <input 
-                            type="password" 
+                          <input
+                            type="password"
                             required
+                            minLength={6}
                             value={newAdmin.password}
-                            onChange={e => setNewAdmin({...newAdmin, password: e.target.value})}
+                            onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })}
                             className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm font-medium pr-12"
+                            placeholder="Minimum 6 characters"
                           />
                           <Key className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
                         </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-bold text-slate-700">Phone</label>
-                        <input 
-                          type="tel" 
+                        <input
+                          type="tel"
                           value={newAdmin.phone}
-                          onChange={e => setNewAdmin({...newAdmin, phone: e.target.value})}
+                          onChange={e => setNewAdmin({ ...newAdmin, phone: e.target.value })}
                           className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm font-medium"
                         />
                       </div>
                     </div>
                     <div className="pt-4 flex justify-end">
-                      <button 
+                      <button
                         type="submit"
                         className="px-10 py-3.5 bg-indigo-600 text-white text-sm font-extrabold rounded-2xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all hover:-translate-y-0.5 active:translate-y-0"
                       >
@@ -488,31 +484,31 @@ export default function AdminSettings() {
                 {admins.map((admin) => (
                   <div key={admin.id} className="group bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm transition-all hover:shadow-xl hover:shadow-indigo-50/50 hover:-translate-y-1">
                     <div className="flex items-center gap-4 mb-6">
-                        <div className="h-12 w-12 rounded-[1rem] bg-indigo-50 flex items-center justify-center text-indigo-700 font-extrabold text-lg">
-                            {admin.name.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                            <h4 className="text-sm font-extrabold text-slate-900 truncate">{admin.name}</h4>
-                            <p className="text-[10px] uppercase font-extrabold tracking-widest text-indigo-500">Administrator</p>
-                        </div>
-                        <button 
-                            disabled={admin.id === currentUser?.id}
-                            onClick={() => setDeletingId(admin.id)}
-                            className="ml-auto p-3 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all opacity-0 group-hover:opacity-100 disabled:hidden"
-                        >
-                            <Trash2 className="w-5 h-5" />
-                        </button>
+                      <div className="h-12 w-12 rounded-[1rem] bg-indigo-50 flex items-center justify-center text-indigo-700 font-extrabold text-lg">
+                        {admin.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-extrabold text-slate-900 truncate">{admin.name}</h4>
+                        <p className="text-[10px] uppercase font-extrabold tracking-widest text-indigo-500">Administrator</p>
+                      </div>
+                      <button
+                        disabled={admin.id === currentUser?.id}
+                        onClick={() => setDeletingId(admin.id)}
+                        className="ml-auto p-3 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all opacity-0 group-hover:opacity-100 disabled:hidden"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </div>
-                    
+
                     <div className="space-y-3 pt-4 border-t border-slate-50">
-                        <div className="flex items-center gap-3 text-slate-500">
-                             <Mail className="w-4 h-4" />
-                             <span className="text-xs font-medium truncate">{admin.email}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-slate-500">
-                             <Smartphone className="w-4 h-4" />
-                             <span className="text-xs font-medium">{admin.phone || 'No phone set'}</span>
-                        </div>
+                      <div className="flex items-center gap-3 text-slate-500">
+                        <Mail className="w-4 h-4" />
+                        <span className="text-xs font-medium truncate">{admin.email}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-slate-500">
+                        <Smartphone className="w-4 h-4" />
+                        <span className="text-xs font-medium">{admin.phone || 'No phone set'}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -527,11 +523,11 @@ export default function AdminSettings() {
                   <h2 className="text-2xl font-extrabold text-slate-900">Platform Audit Logs</h2>
                   <p className="text-sm text-slate-500 mt-1 font-medium">Tracking all administrative and clinical actions for compliance.</p>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <input 
+                    <input
                       type="text"
                       placeholder="Search logs..."
                       value={searchTerm}
@@ -540,18 +536,18 @@ export default function AdminSettings() {
                     />
                   </div>
                   <div className="relative">
-                     <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                     <select 
-                        value={filterAction}
-                        onChange={(e) => setFilterAction(e.target.value)}
-                        className="pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 appearance-none transition-all"
-                     >
-                       <option value="all">All Actions</option>
-                       <option value="create">Create</option>
-                       <option value="update">Update</option>
-                       <option value="delete">Delete</option>
-                       <option value="login">Login</option>
-                     </select>
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <select
+                      value={filterAction}
+                      onChange={(e) => setFilterAction(e.target.value)}
+                      className="pl-10 pr-8 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 appearance-none transition-all"
+                    >
+                      <option value="all">All Actions</option>
+                      <option value="create">Create</option>
+                      <option value="update">Update</option>
+                      <option value="delete">Delete</option>
+                      <option value="login">Login</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -559,22 +555,21 @@ export default function AdminSettings() {
               <div className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin">
                 {filteredLogs.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-40">
-                     <History className="h-12 w-12 text-slate-300" />
-                     <p className="text-sm font-bold text-slate-400">No activity logs found matching your criteria</p>
+                    <History className="h-12 w-12 text-slate-300" />
+                    <p className="text-sm font-bold text-slate-400">No activity logs found matching your criteria</p>
                   </div>
                 ) : (
                   filteredLogs.map((log) => (
                     <div key={log.id} className="group bg-white p-5 rounded-[1.5rem] border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center gap-6">
-                      <div className={`h-12 w-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 ${
-                        log.action === 'create' ? 'bg-emerald-50 text-emerald-600' :
-                        log.action === 'update' ? 'bg-blue-50 text-blue-600' :
-                        log.action === 'delete' ? 'bg-red-50 text-red-600' :
-                        'bg-indigo-50 text-indigo-600'
-                      }`}>
-                        {log.action === 'create' ? <Plus className="w-5 h-5" /> : 
-                         log.action === 'update' ? <Edit2 className="w-5 h-5" /> :
-                         log.action === 'delete' ? <Trash2 className="w-5 h-5" /> :
-                         <History className="w-5 h-5" />}
+                      <div className={`h-12 w-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 ${log.action === 'create' ? 'bg-emerald-50 text-emerald-600' :
+                          log.action === 'update' ? 'bg-blue-50 text-blue-600' :
+                            log.action === 'delete' ? 'bg-red-50 text-red-600' :
+                              'bg-indigo-50 text-indigo-600'
+                        }`}>
+                        {log.action === 'create' ? <Plus className="w-5 h-5" /> :
+                          log.action === 'update' ? <Edit2 className="w-5 h-5" /> :
+                            log.action === 'delete' ? <Trash2 className="w-5 h-5" /> :
+                              <History className="w-5 h-5" />}
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -583,20 +578,20 @@ export default function AdminSettings() {
                           <span className="px-2 py-0.5 bg-slate-100 rounded-full text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">{log.module}</span>
                         </div>
                         <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
-                           <div className="flex items-center gap-1.5">
-                              <UserIcon className="h-3 w-3" />
-                              <span className="text-slate-600">{log.userName}</span>
-                              <span className="text-[10px] px-1.5 py-0.5 bg-slate-50 border border-slate-100 rounded text-slate-400 uppercase tracking-tight">{log.userRole}</span>
-                           </div>
-                           <div className="h-3 w-px bg-slate-100"></div>
-                           <div className="flex items-center gap-1.5">
-                              <CalendarIcon className="h-3 w-3" />
-                              <span>{format(new Date(log.timestamp), 'MMM dd, yyyy')}</span>
-                           </div>
-                           <div className="flex items-center gap-1.5">
-                              <Clock className="h-3 w-3" />
-                              <span>{format(new Date(log.timestamp), 'HH:mm')}</span>
-                           </div>
+                          <div className="flex items-center gap-1.5">
+                            <UserIcon className="h-3 w-3" />
+                            <span className="text-slate-600">{log.userName}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 bg-slate-50 border border-slate-100 rounded text-slate-400 uppercase tracking-tight">{log.userRole}</span>
+                          </div>
+                          <div className="h-3 w-px bg-slate-100"></div>
+                          <div className="flex items-center gap-1.5">
+                            <CalendarIcon className="h-3 w-3" />
+                            <span>{format(new Date(log.timestamp), 'MMM dd, yyyy')}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="h-3 w-3" />
+                            <span>{format(new Date(log.timestamp), 'HH:mm')}</span>
+                          </div>
                         </div>
                       </div>
 
@@ -621,18 +616,18 @@ export default function AdminSettings() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 max-w-md w-full p-10 animate-in zoom-in-95 duration-200 text-center">
             <div className="h-20 w-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Trash2 className="w-10 h-10" />
+              <Trash2 className="w-10 h-10" />
             </div>
             <h3 className="text-2xl font-black text-slate-900 leading-tight">Revoke Admin Access?</h3>
             <p className="text-slate-500 mt-3 font-medium px-4">This will immediately suspend all administrative privileges for this account. Recovery requires manual restoration by another admin.</p>
             <div className="mt-10 flex flex-col gap-3">
-              <button 
+              <button
                 onClick={handleDeleteAdmin}
                 className="w-full py-4 text-sm font-black text-white bg-red-600 hover:bg-red-700 rounded-2xl shadow-xl shadow-red-100 transition-all active:scale-[0.98]"
               >
                 Yes, Revoke Access
               </button>
-              <button 
+              <button
                 onClick={() => setDeletingId(null)}
                 className="w-full py-4 text-sm font-extrabold text-slate-500 hover:bg-slate-50 rounded-2xl transition-colors"
               >
@@ -690,7 +685,7 @@ function MaintenanceTab({ purgeCollection }: { purgeCollection: (name: string) =
 
   const handlePurge = async () => {
     if (!targetCollection) return;
-    
+
     const secret = import.meta.env.VITE_ADMIN_PURGE_PASSWORD;
     if (!secret) {
       toast.error('Maintenance secret not configured in system environment.');
@@ -756,18 +751,17 @@ function MaintenanceTab({ purgeCollection }: { purgeCollection: (name: string) =
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {cat.collections.map((col) => (
                 <div key={col.id} className="group bg-white border border-slate-100 rounded-[1.75rem] p-5 shadow-sm hover:shadow-xl hover:shadow-slate-200/40 transition-all hover:-translate-y-1 flex items-center justify-between gap-4">
-                   <div className="min-w-0">
-                      <p className="text-sm font-extrabold text-slate-900 truncate">{col.name}</p>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mt-0.5">{col.count}</p>
-                   </div>
-                   <button
-                     onClick={() => setTargetCollection(col.id)}
-                     className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 whitespace-nowrap ${
-                       col.caution ? 'bg-red-50 text-red-600 hover:bg-red-600 hover:text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-900 hover:text-white'
-                     }`}
-                   >
-                     Purge
-                   </button>
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-slate-900 truncate">{col.name}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mt-0.5">{col.count}</p>
+                  </div>
+                  <button
+                    onClick={() => setTargetCollection(col.id)}
+                    className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all active:scale-95 whitespace-nowrap ${col.caution ? 'bg-red-50 text-red-600 hover:bg-red-600 hover:text-white' : 'bg-slate-50 text-slate-600 hover:bg-slate-900 hover:text-white'
+                      }`}
+                  >
+                    Purge
+                  </button>
                 </div>
               ))}
             </div>

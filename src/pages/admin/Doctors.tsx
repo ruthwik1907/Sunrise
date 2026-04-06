@@ -16,7 +16,7 @@ export default function AdminStaff() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingStaff, setEditingStaff] = useState<User | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,11 +36,11 @@ export default function AdminStaff() {
   };
 
   const currentStaff = getRoleUsers(activeTab);
-  
+
   const filteredStaff = currentStaff.filter(staff => {
-    const matchesSearch = (staff.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         (staff.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (staff.specialty && staff.specialty.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = (staff.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (staff.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (staff.specialty && staff.specialty.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesDept = filterDept ? staff.departmentId === filterDept : true;
     return matchesSearch && matchesDept;
   });
@@ -51,16 +51,16 @@ export default function AdminStaff() {
       toast.error('Please fill in all required fields.');
       return;
     }
-    
+
     if (activeTab === 'doctor' && (!departmentId || !specialty)) {
       toast.error('Please fill in department and specialty for doctors.');
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       const staffData = { name, email, password, phone, departmentId, specialty };
-      
+
       switch (activeTab) {
         case 'doctor':
           await addDoctor(staffData);
@@ -75,12 +75,11 @@ export default function AdminStaff() {
           await addLabTechnician(staffData);
           break;
       }
-      
-      toast.success(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('_', ' ')} added successfully!`);
+
       setShowAddModal(false);
       resetForm();
     } catch (error) {
-      toast.error(`Failed to add ${activeTab}. Please try again.`);
+      console.error(`Failed to add ${activeTab}:`, error);
     } finally {
       setIsSubmitting(false);
     }
@@ -100,17 +99,17 @@ export default function AdminStaff() {
   const handleUpdateStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingStaff) return;
-    
+
     if (!name || !email) {
       toast.error('Please fill in all required fields.');
       return;
     }
-    
+
     if (activeTab === 'doctor' && (!departmentId || !specialty)) {
       toast.error('Please fill in department and specialty for doctors.');
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
       const updateData: any = { name, email, phone };
@@ -118,7 +117,7 @@ export default function AdminStaff() {
         updateData.departmentId = departmentId;
         updateData.specialty = specialty;
       }
-      
+
       await updateUser(editingStaff.id, updateData);
       toast.success(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1).replace('_', ' ')} updated successfully!`);
       setShowEditModal(false);
@@ -173,7 +172,7 @@ export default function AdminStaff() {
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Staff Registry</h1>
           <p className="text-slate-500 font-medium mt-1">Manage clinical and support personnel across all departments.</p>
         </div>
-        <button 
+        <button
           onClick={() => setShowAddModal(true)}
           className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-sm font-black uppercase tracking-widest rounded-2xl text-white bg-indigo-600 hover:bg-slate-900 shadow-xl shadow-indigo-100 transition-all"
         >
@@ -191,18 +190,16 @@ export default function AdminStaff() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold rounded-lg transition-all ${
-                  activeTab === tab.id
+                className={`flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold rounded-lg transition-all ${activeTab === tab.id
                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <Icon className="h-4 w-4" />
                 <span className="hidden sm:inline">{tab.name}</span>
                 <span className="sm:hidden">{tab.name.split(' ')[0]}</span>
-                <span className={`px-2 py-0.5 rounded-full text-xs ${
-                  activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                }`}>
+                <span className={`px-2 py-0.5 rounded-full text-xs ${activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
                   {tab.count}
                 </span>
               </button>
@@ -235,7 +232,7 @@ export default function AdminStaff() {
             </div>
           )}
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-100">
             <thead className="bg-slate-50/50">
@@ -298,16 +295,16 @@ export default function AdminStaff() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
+                        <button
                           onClick={() => handleEditClick(staff)}
-                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white hover:shadow-lg rounded-xl transition-all" 
+                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white hover:shadow-lg rounded-xl transition-all"
                           title="Edit"
                         >
                           <Edit className="h-4 w-4" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => setDeletingId(staff.id)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-white hover:shadow-lg rounded-xl transition-all" 
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-white hover:shadow-lg rounded-xl transition-all"
                           title="Delete"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -377,6 +374,7 @@ export default function AdminStaff() {
                       className="w-full px-4 py-3 border-2 border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 text-sm font-medium transition-all"
                       placeholder="Minimum 6 characters"
                       required
+                      minLength={6}
                     />
                   </div>
                 )}
