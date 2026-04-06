@@ -4,13 +4,13 @@ import {
   Settings as SettingsIcon, User as UserIcon, Bell, Shield, Key, Smartphone, Mail, 
   Save, Building, Globe, Database, Users, Plus, Edit2, Trash2, CheckCircle2, 
   History, ClipboardList, Search, Filter, Calendar as CalendarIcon, Clock,
-  Activity, UserPlus, ChevronRight 
+  Activity, UserPlus, ChevronRight, AlertTriangle, Lock, ShieldAlert
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 
 export default function AdminSettings() {
-  const { currentUser, users, createAdminUser, deleteUser, hospitalSettings, updateHospitalSettings, auditLogs } = useAppContext();
+  const { currentUser, users, createAdminUser, deleteUser, hospitalSettings, updateHospitalSettings, auditLogs, purgeCollection } = useAppContext();
   const [activeTab, setActiveTab] = useState('general');
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '', phone: '' });
@@ -214,6 +214,18 @@ export default function AdminSettings() {
           >
             <Globe className={`h-5 w-5 ${activeTab === 'integrations' ? 'text-indigo-600' : 'text-slate-400'}`} />
             API & Integrations
+          </button>
+
+          <button
+            onClick={() => setActiveTab('maintenance')}
+            className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === 'maintenance' 
+                ? 'bg-red-50 text-red-700 shadow-md shadow-red-100/50 ring-1 ring-red-500/10' 
+                : 'text-slate-600 hover:bg-red-50/50 hover:text-red-600 transition-colors'
+            }`}
+          >
+            <Database className={`h-5 w-5 ${activeTab === 'maintenance' ? 'text-red-600' : 'text-slate-400'}`} />
+            Database Maintenance
           </button>
         </div>
 
@@ -773,6 +785,157 @@ export default function AdminSettings() {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MaintenanceTab({ purgeCollection }: { purgeCollection: (name: string) => Promise<number> }) {
+  const [password, setPassword] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [targetCollection, setTargetCollection] = useState<string | null>(null);
+  const [isPurging, setIsPurging] = useState(false);
+
+  const collections = [
+    { id: 'appointments', name: 'Appointments', count: 'All history' },
+    { id: 'auditLogs', name: 'Audit Logs', count: 'System tracking' },
+    { id: 'bills', name: 'Pharmacy Bills', count: 'Finance records' },
+    { id: 'prescriptions', name: 'Prescriptions', count: 'Medical orders' },
+    { id: 'medicalRecords', name: 'Medical Records', count: 'Patient history' },
+    { id: 'bedBookings', name: 'Bed Occupancy', count: 'In-patient data' },
+    { id: 'equipmentBookings', name: 'Equipment Usage', count: 'Resource logs' },
+    { id: 'inventory', name: 'Inventory Stocks', count: 'Pharmacy/Lab' },
+    { id: 'users', name: 'User Directory', count: 'Patients/Staff (Safeguarded)', caution: true },
+    { id: 'beds', name: 'Bed Registry', count: 'Infrastructure', caution: true },
+    { id: 'equipment', name: 'Equipment Registry', count: 'Medical devices', caution: true },
+    { id: 'departments', name: 'Clinical Departments', count: 'Core structure', caution: true },
+    { id: 'doctorSchedules', name: 'Doctor Rosters', count: 'Shift data' },
+  ];
+
+  const handlePurge = async () => {
+    if (!targetCollection) return;
+    
+    const secret = import.meta.env.VITE_ADMIN_PURGE_PASSWORD;
+    if (!secret) {
+      toast.error('Maintenance secret not configured in system environment.');
+      return;
+    }
+
+    if (password !== secret) {
+      toast.error('Invalid maintenance password. Access denied.');
+      return;
+    }
+
+    setIsPurging(true);
+    try {
+      await purgeCollection(targetCollection);
+      setTargetCollection(null);
+      setPassword('');
+    } catch (err) {
+      // toast handled in context
+    } finally {
+      setIsPurging(false);
+    }
+  };
+
+  return (
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+      <div className="flex items-center gap-4">
+        <div className="h-14 w-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 shadow-sm border border-red-100/50">
+          <Database className="h-7 w-7" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Database Maintenance</h2>
+          <p className="text-sm text-slate-500 mt-1 uppercase font-black tracking-widest text-[10px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full inline-block">
+            High Privileged Operations
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-amber-50 border-l-4 border-amber-400 p-6 rounded-r-2xl">
+        <div className="flex gap-4">
+          <AlertTriangle className="h-6 w-6 text-amber-500 flex-shrink-0" />
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-amber-900">Destructive Actions Ahead</h3>
+            <p className="text-xs text-amber-700 leading-relaxed font-semibold">
+              Purging a collection will permanently delete all records. This action cannot be undone. 
+              Active sessions and data currently in memory across hospital terminals may become inconsistent.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {collections.map((col) => (
+          <div key={col.id} className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all group">
+            <div className="flex justify-between items-start mb-4">
+              <div className="bg-slate-50 p-3 rounded-2xl group-hover:bg-red-50 transition-colors">
+                <ClipboardList className={`h-5 w-5 ${col.caution ? 'text-red-500' : 'text-slate-400'}`} />
+              </div>
+              <button
+                onClick={() => setTargetCollection(col.id)}
+                className="px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-600 transition-all active:scale-95"
+              >
+                Purge
+              </button>
+            </div>
+            <h4 className="text-sm font-bold text-slate-900">{col.name}</h4>
+            <p className="text-xs text-slate-400 font-medium mt-1 uppercase tracking-tight">{col.count}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Confirmation Modal */}
+      {targetCollection && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl p-8 border border-slate-100 animate-in zoom-in-95 duration-300">
+            <div className="text-center space-y-4">
+              <div className="h-16 w-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <ShieldAlert className="h-8 w-8" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Verify Intent</h3>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                You are about to purge all records from <span className="font-bold text-red-600 uppercase">{targetCollection}</span>.
+                This operation requires the maintenance master password.
+              </p>
+
+              <div className="mt-8 space-y-4">
+                <div className="relative group">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-red-500 transition-colors" />
+                  <input
+                    type="password"
+                    placeholder="Enter Master Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoFocus
+                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold focus:bg-white focus:border-red-500 focus:ring-0 transition-all outline-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setTargetCollection(null)}
+                    disabled={isPurging}
+                    className="flex-1 py-4 bg-slate-100 text-slate-600 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePurge}
+                    disabled={isPurging || !password}
+                    className="flex-1 py-4 bg-red-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-red-700 shadow-lg shadow-red-200 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                  >
+                    {isPurging ? (
+                      <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    ) : (
+                      'Confirm Purge'
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

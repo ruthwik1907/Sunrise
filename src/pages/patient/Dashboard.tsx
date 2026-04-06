@@ -77,7 +77,7 @@ export default function PatientDashboard() {
           <h1 className="text-2xl font-bold text-slate-900">Welcome back, {currentUser.name}</h1>
           <p className="text-slate-500">Here is your healthcare summary for today.</p>
         </div>
-        <Link to="/book-appointment" className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm">
+        <Link to="/book" className="inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm">
           <Calendar className="h-4 w-4 mr-2" />
           Book Appointment
         </Link>
@@ -175,7 +175,7 @@ export default function PatientDashboard() {
                   <Calendar className="h-8 w-8 text-slate-300" />
                 </div>
                 <p className="text-slate-500 font-medium">No upcoming appointments</p>
-                <Link to="/book-appointment" className="mt-2 text-indigo-600 hover:text-indigo-700 hover:underline text-sm font-medium">Book one now</Link>
+                <Link to="/book" className="mt-2 text-indigo-600 hover:text-indigo-700 hover:underline text-sm font-medium">Book one now</Link>
               </div>
             )}
           </div>

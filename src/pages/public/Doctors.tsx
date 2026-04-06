@@ -89,18 +89,12 @@ export default function Doctors() {
                     </div>
                   </div>
                 </div>
-                <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex gap-2">
+                <div className="p-4 border-t border-slate-100 bg-slate-50/50">
                   <Link 
-                    to={`/doctors/${doc.id}`} 
-                    className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-slate-200 text-sm font-medium rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-colors"
+                    to={`/book?doctor=${doc.id}`} 
+                    className="w-full inline-flex justify-center items-center px-4 py-3.5 border border-transparent text-xs font-black uppercase tracking-widest rounded-2xl text-white bg-indigo-600 hover:bg-slate-900 shadow-lg shadow-indigo-100 transition-all active:scale-95"
                   >
-                    View Profile
-                  </Link>
-                  <Link 
-                    to={`/book-appointment?doctor=${doc.id}`} 
-                    className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
-                  >
-                    Book
+                    Book Appointment
                   </Link>
                 </div>
               </div>

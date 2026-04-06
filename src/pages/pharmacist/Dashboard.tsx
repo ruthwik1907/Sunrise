@@ -3,7 +3,7 @@ import { useAppContext } from '../../context/AppContext';
 import { InventoryItem } from '../../context/AppContext';
 import {
   Pill, Search, CheckCircle, Clock, AlertTriangle, Package, User,
-  Plus, Edit2, Trash2, X, ShieldAlert, TrendingUp, IndianRupee, Layers
+  Plus, Edit2, Trash2, X, ShieldAlert, TrendingUp, IndianRupee, Layers, Printer
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -51,8 +51,7 @@ export default function PharmacistDashboard() {
     const doctor = users.find(u => u.id === rx.doctorId);
     return (patient?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (doctor?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (rx.medications || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (rx.items || []).some(item => item.medicationName.toLowerCase().includes(searchTerm.toLowerCase()));
+      (rx.items || []).some(item => item.medicineName.toLowerCase().includes(searchTerm.toLowerCase()));
   });
 
   const filteredInventory = inventory.filter(item =>
@@ -119,7 +118,7 @@ export default function PharmacistDashboard() {
   // --- Dispense Flow ---
   const openDispenseModal = (rx: any) => {
     const patient = users.find(u => u.id === rx.patientId);
-    const meds = rx.items?.map((i: any) => i.medicationName).join(', ') || rx.medications || 'N/A';
+    const meds = rx.items?.map((i: any) => i.medicineName).join(', ') || 'N/A';
     setDispenseModal({ prescriptionId: rx.id, patientName: patient?.name || 'Unknown', medications: meds, items: [] });
     setDispenseSelections([{ inventoryItemId: '', quantity: 1 }]);
   };
@@ -282,7 +281,7 @@ export default function PharmacistDashboard() {
                   const patient = users.find(u => u.id === rx.patientId);
                   const doctor = users.find(u => u.id === rx.doctorId);
                   const urgent = isUrgent(rx.date);
-                  const medList = rx.items?.map(i => `${i.medicationName} ${i.dosage}`).join(', ') || rx.medications || 'N/A';
+                  const medList = rx.items?.map(i => `${i.medicineName} ${i.dosage}`).join(', ') || 'N/A';
                   return (
                     <div key={rx.id} className={`rounded-xl border p-5 ${urgent ? 'border-red-200 bg-red-50/40' : 'border-slate-200'}`}>
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -357,7 +356,7 @@ export default function PharmacistDashboard() {
                           </div>
                           <p className="text-xs text-slate-500 mb-2">Prescribed by Dr. {doctor?.name || 'Unknown'}</p>
                           <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700">
-                            {rx.items?.map(i => `${i.medicationName} ${i.dosage}`).join(', ') || rx.medications}
+                            {rx.items?.map(i => `${i.medicineName} ${i.dosage}`).join(', ') || 'N/A'}
                           </div>
                           <div className="flex flex-wrap gap-3 text-xs text-slate-500 mt-2">
                             <span>Prescribed: {new Date(rx.date).toLocaleDateString()}</span>
@@ -512,7 +511,13 @@ export default function PharmacistDashboard() {
                           <td className="px-4 py-3 text-xs font-mono text-slate-600">#{inv.id.substring(0, 8).toUpperCase()}</td>
                           <td className="px-4 py-3 text-sm text-slate-900">{patient?.name || 'Unknown'}</td>
                           <td className="px-4 py-3 text-xs text-slate-500 max-w-xs">
-                            {inv.items?.map(i => i.description).join('; ') || inv.description}
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {inv.items?.map((item: any, i: number) => (
+                                <span key={i} className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 shadow-sm">
+                                  {item.medicineName} × {item.quantity}
+                                </span>
+                              ))}
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-sm font-bold text-slate-900">₹{inv.amount.toFixed(2)}</td>
                           <td className="px-4 py-3 text-sm text-slate-600">{new Date(inv.date).toLocaleDateString()}</td>
@@ -526,11 +531,9 @@ export default function PharmacistDashboard() {
                         </tr>
                       );
                     })}
-                    {invoices.filter(inv => inv.description?.includes('Pharmacy')).length === 0 && (
+                    {invoices.filter(inv => inv.type === 'pharmacy').length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-12 text-center text-sm text-slate-500">
-                          No pharmacy transactions recorded yet.
-                        </td>
+                        <td colSpan={5} className="px-4 py-12 text-center text-slate-400 italic">No transactions recorded yet.</td>
                       </tr>
                     )}
                   </tbody>

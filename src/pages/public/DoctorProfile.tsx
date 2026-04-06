@@ -134,7 +134,7 @@ export default function DoctorProfile() {
                 </div>
                 
                 <Link 
-                  to={`/book-appointment?doctor=${doctor.id}`}
+                  to={`/book?doctor=${doctor.id}`}
                   className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm hover:shadow-md transition-all"
                 >
                   <Calendar className="h-5 w-5 mr-2" />

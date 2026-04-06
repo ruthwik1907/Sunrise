@@ -4,7 +4,10 @@ import { useAppContext } from '../../context/AppContext';
 import { ArrowRight, Activity, Users, Calendar, Shield, Heart, Award, Clock, PhoneCall, Stethoscope, CheckCircle2 } from 'lucide-react';
 
 export default function Home() {
-  const { hospitalSettings } = useAppContext();
+  const { hospitalSettings, users, departments } = useAppContext();
+  const doctorCount = users.filter(u => u.role === 'doctor').length;
+  const patientCount = users.filter(u => u.role === 'patient').length;
+  const specialtyCount = departments.length;
   const scrollingImages = [
     "/images/hospital-1.jpg",
     "/images/hospital-2.jpg",
@@ -32,7 +35,7 @@ export default function Home() {
               Experience world-class medical care with our state-of-the-art facilities, expert medical professionals, and seamless digital health platform. Your health is our priority.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 mb-8 sm:mb-10 justify-center lg:justify-start">
-              <Link to="/book-appointment" className="inline-flex justify-center items-center px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm hover:shadow-md transition-all">
+              <Link to="/book" className="inline-flex justify-center items-center px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm hover:shadow-md transition-all">
                 Book Appointment
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
@@ -52,17 +55,17 @@ export default function Home() {
               </div>
             </div>
           </div>
-          
+
           <div className="w-full lg:w-6/12 relative">
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 sm:border-8 border-white">
-              <img 
-                src="/images/hospital-hero.jpg" 
-                alt={hospitalSettings?.name || "Modern Hospital Facility"} 
+              <img
+                src="/images/hospital-hero.jpg"
+                alt={hospitalSettings?.name || "Modern Hospital Facility"}
                 className="w-full h-[300px] sm:h-[400px] lg:h-[500px] object-cover"
                 onError={(event) => { (event.target as HTMLImageElement).src = 'https://source.unsplash.com/featured/1200x800/?hospital,clinic,doctor'; }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent"></div>
-              
+
               {/* Floating Badge */}
               <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 bg-white/95 backdrop-blur-sm p-3 sm:p-4 rounded-2xl shadow-lg border border-white/20 flex items-center gap-3 sm:gap-4">
                 <div className="bg-emerald-100 p-2 sm:p-3 rounded-xl">
@@ -74,7 +77,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            
+
             {/* Decorative blobs */}
             <div className="absolute -top-6 -right-6 sm:-top-12 sm:-right-12 w-32 h-32 sm:w-64 sm:h-64 bg-indigo-400 rounded-full mix-blend-multiply filter blur-2xl sm:blur-3xl opacity-30 animate-blob"></div>
             <div className="absolute -bottom-6 -left-6 sm:-bottom-12 sm:-left-12 w-32 h-32 sm:w-64 sm:h-64 bg-blue-400 rounded-full mix-blend-multiply filter blur-2xl sm:blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
@@ -92,9 +95,9 @@ export default function Home() {
           <div className="flex animate-marquee whitespace-nowrap">
             {[...scrollingImages, ...scrollingImages].map((img, idx) => (
               <div key={idx} className="inline-block px-4 w-80 h-56">
-                <img 
-                  src={img} 
-                  alt={`Facility ${idx}`} 
+                <img
+                  src={img}
+                  alt={`Facility ${idx}`}
                   className="w-full h-full object-cover rounded-2xl shadow-sm border border-slate-100"
                   referrerPolicy="no-referrer"
                 />
@@ -110,15 +113,15 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-y-12 gap-x-4 md:gap-8 text-center md:divide-x divide-indigo-800/50">
             <div className="px-2 md:px-4">
-              <div className="text-4xl md:text-5xl font-extrabold text-white mb-2">42+</div>
+              <div className="text-4xl md:text-5xl font-extrabold text-white mb-2">{doctorCount > 0 ? `${doctorCount}+` : '20+'}</div>
               <div className="text-indigo-200 font-medium uppercase tracking-wider text-xs sm:text-sm">Expert Doctors</div>
             </div>
             <div className="px-2 md:px-4 border-l border-indigo-800/50 md:border-none">
-              <div className="text-4xl md:text-5xl font-extrabold text-white mb-2">15k+</div>
+              <div className="text-4xl md:text-5xl font-extrabold text-white mb-2">{patientCount > 50 ? `${(patientCount / 1000).toFixed(1)}k+` : `${patientCount}+`}</div>
               <div className="text-indigo-200 font-medium uppercase tracking-wider text-xs sm:text-sm">Happy Patients</div>
             </div>
             <div className="px-2 md:px-4">
-              <div className="text-4xl md:text-5xl font-extrabold text-white mb-2">12</div>
+              <div className="text-4xl md:text-5xl font-extrabold text-white mb-2">{specialtyCount > 0 ? specialtyCount : '10'}</div>
               <div className="text-indigo-200 font-medium uppercase tracking-wider text-xs sm:text-sm">Specialties</div>
             </div>
             <div className="px-2 md:px-4 border-l border-indigo-800/50 md:border-none">
@@ -136,7 +139,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Why Choose {hospitalSettings?.name || 'Sunrise Hospital'}?</h2>
             <p className="text-lg text-slate-600">We combine medical expertise with modern technology to provide you with the best healthcare experience possible.</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-slate-100 group-hover:bg-indigo-600 transition-colors">
@@ -145,7 +148,7 @@ export default function Home() {
               <h3 className="text-xl font-bold text-slate-900 mb-3">Expert Doctors</h3>
               <p className="text-slate-600 leading-relaxed">Our team consists of highly qualified and experienced medical professionals dedicated to your well-being across various specialties.</p>
             </div>
-            
+
             <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-slate-100 group-hover:bg-indigo-600 transition-colors">
                 <Calendar className="h-8 w-8 text-indigo-600 group-hover:text-white transition-colors" />
@@ -153,7 +156,7 @@ export default function Home() {
               <h3 className="text-xl font-bold text-slate-900 mb-3">Easy Scheduling</h3>
               <p className="text-slate-600 leading-relaxed">Book and manage your appointments online with our seamless scheduling system. No more waiting in lines or playing phone tag.</p>
             </div>
-            
+
             <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
               <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-slate-100 group-hover:bg-indigo-600 transition-colors">
                 <Shield className="h-8 w-8 text-indigo-600 group-hover:text-white transition-colors" />
@@ -172,11 +175,11 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">How It Works</h2>
             <p className="text-lg text-slate-600">Your journey to better health is just a few clicks away.</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             {/* Connecting line for desktop */}
             <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-indigo-200 z-0"></div>
-            
+
             <div className="relative z-10 flex flex-col items-center text-center">
               <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-md border-4 border-indigo-50 mb-6">
                 <span className="text-3xl font-extrabold text-indigo-600">1</span>
@@ -184,7 +187,7 @@ export default function Home() {
               <h3 className="text-xl font-bold text-slate-900 mb-2">Find a Doctor</h3>
               <p className="text-slate-600">Search for specialists by department, name, or condition.</p>
             </div>
-            
+
             <div className="relative z-10 flex flex-col items-center text-center">
               <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-md border-4 border-indigo-50 mb-6">
                 <span className="text-3xl font-extrabold text-indigo-600">2</span>
@@ -192,7 +195,7 @@ export default function Home() {
               <h3 className="text-xl font-bold text-slate-900 mb-2">Book Appointment</h3>
               <p className="text-slate-600">Choose a convenient date and time slot that works for you.</p>
             </div>
-            
+
             <div className="relative z-10 flex flex-col items-center text-center">
               <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-md border-4 border-indigo-50 mb-6">
                 <span className="text-3xl font-extrabold text-indigo-600">3</span>
@@ -217,7 +220,7 @@ export default function Home() {
             <Link to="/register" className="inline-flex justify-center items-center px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-slate-900 bg-white hover:bg-slate-50 shadow-lg hover:shadow-xl transition-all">
               Create Patient Account
             </Link>
-            <Link to="/book-appointment" className="inline-flex justify-center items-center px-8 py-4 border border-slate-700 text-lg font-bold rounded-xl text-white bg-slate-800 hover:bg-slate-700 transition-all">
+            <Link to="/book" className="inline-flex justify-center items-center px-8 py-4 border border-slate-700 text-lg font-bold rounded-xl text-white bg-slate-800 hover:bg-slate-700 transition-all">
               Book as Guest
             </Link>
           </div>

@@ -121,50 +121,35 @@ export default function DoctorAppointments() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ring-1 ring-inset capitalize ${getStatusColor(apt.status)}`}>
-                        {apt.status}
-                      </span>
+                      <select
+                        value={apt.status}
+                        onChange={(e) => updateAppointmentStatus(apt.id, e.target.value as any)}
+                        className={`text-xs font-semibold rounded-full px-2.5 py-1 border-none ring-1 ring-inset focus:ring-2 focus:ring-indigo-500 cursor-pointer capitalize ${getStatusColor(apt.status)}`}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-start">
-                        <FileText className="h-4 w-4 mr-2 text-slate-400 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm text-slate-600 line-clamp-2 max-w-xs">{apt.reason}</span>
+                      <div className="flex flex-col gap-1 max-w-xs">
+                        <div className="flex items-start">
+                          <FileText className="h-4 w-4 mr-2 text-slate-400 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm font-medium text-slate-900 line-clamp-1">{apt.reason}</span>
+                        </div>
+                        {apt.reason && apt.reason.length > 40 && (
+                          <p className="text-xs text-slate-500 pl-6 line-clamp-2">{apt.reason}</p>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {apt.status === 'pending' && (
-                          <>
-                            <button 
-                              onClick={() => updateAppointmentStatus(apt.id, 'confirmed')} 
-                              className="text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 p-1.5 rounded-md transition-colors"
-                              title="Accept Appointment"
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </button>
-                            <button 
-                              onClick={() => updateAppointmentStatus(apt.id, 'cancelled')} 
-                              className="text-rose-700 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 p-1.5 rounded-md transition-colors"
-                              title="Decline Appointment"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </button>
-                          </>
-                        )}
-                        {apt.status === 'confirmed' && (
-                          <button 
-                            onClick={() => updateAppointmentStatus(apt.id, 'completed')} 
-                            className="text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-md transition-colors"
-                            title="Mark as Completed"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                        )}
+                      <div className="flex items-center justify-end gap-2">
                         <Link 
                           to={`/doctor/patients/${patient?.id}`} 
-                          className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-md transition-colors"
+                          className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors border border-indigo-100 shadow-sm"
                         >
-                          View Patient
+                          Clinical Profile
                         </Link>
                       </div>
                     </td>

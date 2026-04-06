@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext, User } from '../../context/AppContext';
 import {
   Calendar, Users, Clock, CheckCircle, XCircle, UserPlus, Search,
-  Phone, Mail, Hash, ClipboardList, Stethoscope, AlertCircle, X, Printer
+  Phone, Mail, Hash, ClipboardList, Stethoscope, AlertCircle, X, Printer, Bed
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -12,6 +12,8 @@ export default function ReceptionistDashboard() {
   const { currentUser, appointments, users, updateAppointmentStatus, createAppointment, createWalkInPatient, bedBookings, equipmentBookings, beds, equipment, generateServiceInvoice, labRequests } = useAppContext();
   const [activeTab, setActiveTab] = useState<TabType>('queue');
   const [searchTerm, setSearchTerm] = useState('');
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [foundFamily, setFoundFamily] = useState<User[]>([]);
   const [showNewAppointment, setShowNewAppointment] = useState(false);
 
   if (!currentUser) return null;
@@ -233,6 +235,70 @@ Total Patients: ${todayApts.length}
             </div>
           )}
 
+          {/* ── GLOBAL SEARCH / WALKIN ── */}
+          {activeTab === 'walkin' && (
+            <div className="space-y-6">
+              <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
+                <h3 className="text-sm font-bold text-indigo-900 mb-4 flex items-center gap-2">
+                  <Search className="h-4 w-4" /> Global Patient & Family Search
+                </h3>
+                <div className="flex gap-3">
+                  <input 
+                    type="text" 
+                    placeholder="Enter Phone Number or MRN..." 
+                    value={globalSearch}
+                    onChange={(e) => {
+                      setGlobalSearch(e.target.value);
+                      if (e.target.value.length >= 3) {
+                        const results = users.filter(u => 
+                          u.role === 'patient' && 
+                          (u.phone?.includes(e.target.value) || u.mrn?.includes(e.target.value))
+                        );
+                        setFoundFamily(results);
+                      } else {
+                        setFoundFamily([]);
+                      }
+                    }}
+                    className="flex-1 px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm"
+                  />
+                  <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">Search</button>
+                </div>
+              </div>
+
+              {foundFamily.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-bold text-slate-900 flex items-center justify-between">
+                    Family Members Linked to "{globalSearch}"
+                    <button onClick={() => setShowNewAppointment(true)} className="text-indigo-600 hover:underline text-xs">+ Register New Family Member</button>
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {foundFamily.map(member => (
+                      <div key={member.id} className="p-4 border border-slate-200 rounded-2xl hover:border-indigo-500 hover:bg-indigo-50/30 transition-all group flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 uppercase tracking-tighter">
+                            {member.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">{member.name}</p>
+                            <p className="text-[10px] text-slate-500">MRN: {member.mrn || 'UNREGISTERED'} • {member.dob || 'DOB N/A'}</p>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            // Pre-fill logic for new appointment
+                            setShowNewAppointment(true);
+                          }}
+                          className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                        >
+                          Book Apt
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {/* ── CHECK-IN ── */}
           {activeTab === 'checkin' && (
             <div className="space-y-4">
@@ -249,11 +315,10 @@ Total Patients: ${todayApts.length}
                   return (
                     <div key={apt.id} className="rounded-xl border border-slate-200 p-4 flex items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                        <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500">
                           {idx + 1}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-900">{patient?.name || 'Unknown'}</p>
                           <p className="text-xs text-slate-500">Dr. {doctor?.name} · {apt.time} · {apt.reason || 'General'}</p>
                         </div>
                       </div>

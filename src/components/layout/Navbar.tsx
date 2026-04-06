@@ -38,7 +38,7 @@ export const Navbar = () => {
             {!currentUser ? (
               <>
                 <Link to="/login" className="text-slate-500 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium">Login</Link>
-                <Link to="/book-appointment" className="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium transition-colors">Book Appointment</Link>
+                <Link to="/book" className="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium transition-colors">Book Appointment</Link>
               </>
             ) : (
               <div className="flex items-center space-x-4">
@@ -91,7 +91,7 @@ export const Navbar = () => {
             {!currentUser ? (
               <div className="flex flex-col space-y-2 px-4">
                 <Link to="/login" onClick={closeMenu} className="block text-center text-slate-500 hover:text-slate-900 px-3 py-2 rounded-md text-base font-medium border border-slate-200">Login</Link>
-                <Link to="/book-appointment" onClick={closeMenu} className="block text-center bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-base font-medium transition-colors">Book Appointment</Link>
+                <Link to="/book" onClick={closeMenu} className="block text-center bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-base font-medium transition-colors">Book Appointment</Link>
               </div>
             ) : (
               <div className="flex items-center justify-between px-4">

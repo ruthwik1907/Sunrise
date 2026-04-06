@@ -15,11 +15,12 @@ import { Toaster } from 'react-hot-toast';
 const Home = React.lazy(() => import('./pages/public/Home'));
 const About = React.lazy(() => import('./pages/public/About'));
 const Doctors = React.lazy(() => import('./pages/public/Doctors'));
-const DoctorProfile = React.lazy(() => import('./pages/public/DoctorProfile'));
 const BookAppointment = React.lazy(() => import('./pages/public/BookAppointment'));
 const Login = React.lazy(() => import('./pages/auth/Login'));
 const Register = React.lazy(() => import('./pages/auth/Register'));
 const ForgotPassword = React.lazy(() => import('./pages/auth/ForgotPassword'));
+const TermsOfService = React.lazy(() => import('./pages/public/TermsOfService'));
+const PrivacyPolicy = React.lazy(() => import('./pages/public/PrivacyPolicy'));
 
 // Lazy load Patient Pages
 const PatientDashboard = React.lazy(() => import('./pages/patient/Dashboard'));
@@ -47,6 +48,7 @@ const AdminDepartments = React.lazy(() => import('./pages/admin/Departments'));
 const AdminBeds = React.lazy(() => import('./pages/admin/Beds'));
 const AdminEquipment = React.lazy(() => import('./pages/admin/Equipment'));
 const AdminInvoices = React.lazy(() => import('./pages/admin/Invoices'));
+const AdminUsers = React.lazy(() => import('./pages/admin/Users'));
 const AdminReports = React.lazy(() => import('./pages/admin/Reports'));
 const AdminSettings = React.lazy(() => import('./pages/admin/Settings'));
 
@@ -67,13 +69,14 @@ export default function App() {
             <Route path="/" element={<><Navbar /><Home /><Footer /></>} />
             <Route path="/about" element={<><Navbar /><About /><Footer /></>} />
             <Route path="/doctors" element={<><Navbar /><Doctors /><Footer /></>} />
-            <Route path="/doctors/:id" element={<><Navbar /><DoctorProfile /><Footer /></>} />
-            <Route path="/book-appointment" element={<><Navbar /><BookAppointment /><Footer /></>} />
+            <Route path="/book" element={<><Navbar /><BookAppointment /><Footer /></>} />
             
             {/* Auth Routes */}
             <Route path="/login" element={<><Navbar /><Login /><Footer /></>} />
             <Route path="/register" element={<><Navbar /><Register /><Footer /></>} />
             <Route path="/forgot-password" element={<><Navbar /><ForgotPassword /><Footer /></>} />
+            <Route path="/terms" element={<><Navbar /><TermsOfService /><Footer /></>} />
+            <Route path="/privacy" element={<><Navbar /><PrivacyPolicy /><Footer /></>} />
 
             {/* Patient Portal */}
             <Route path="/patient" element={<DashboardLayout allowedRoles={['patient']} />}>
@@ -101,6 +104,7 @@ export default function App() {
             {/* Admin Portal */}
             <Route path="/admin" element={<DashboardLayout allowedRoles={['admin']} />}>
               <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
               <Route path="doctors" element={<AdminDoctors />} />
               <Route path="patients" element={<AdminPatients />} />
               <Route path="appointments" element={<AdminAppointments />} />

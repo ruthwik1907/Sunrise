@@ -35,7 +35,7 @@ export const Footer = () => {
               <li><Link to="/" className="hover:text-indigo-400 transition-colors">Home</Link></li>
               <li><Link to="/about" className="hover:text-indigo-400 transition-colors">About Us</Link></li>
               <li><Link to="/doctors" className="hover:text-indigo-400 transition-colors">Find a Doctor</Link></li>
-              <li><Link to="/book-appointment" className="hover:text-indigo-400 transition-colors">Book Appointment</Link></li>
+              <li><Link to="/book" className="hover:text-indigo-400 transition-colors">Book Appointment</Link></li>
               <li><Link to="/login" className="hover:text-indigo-400 transition-colors">Patient Portal</Link></li>
             </ul>
           </div>
@@ -72,8 +72,12 @@ export const Footer = () => {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
+        <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
           <p>&copy; {new Date().getFullYear()} {hospitalName} Hospital Management System. All rights reserved.</p>
+          <div className="flex gap-6">
+            <Link to="/terms" className="hover:text-indigo-400 transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-indigo-400 transition-colors">Privacy Policy</Link>
+          </div>
         </div>
       </div>
     </footer>

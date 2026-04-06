@@ -18,11 +18,16 @@ export default function BookAppointment() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
+  const isGuest = searchParams.get('guest') === 'true';
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+
   useEffect(() => {
-    if (!currentUser) {
-      navigate('/login?redirect=/book-appointment');
+    if (!currentUser && !isGuest) {
+      navigate('/login?redirect=/book');
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, isGuest, navigate]);
 
   useEffect(() => {
     if (preselectedDoctor) {
@@ -154,21 +159,35 @@ export default function BookAppointment() {
     setIsSubmitting(true);
 
     try {
-      await bookAppointment({
-        patientId: currentUser.id,
+      const appointmentData = {
+        patientId: currentUser?.id || 'guest',
         doctorId,
         departmentId,
         date,
         time,
-        reason
-      });
-      navigate('/patient/appointments');
+        reason,
+        // Add guest details if applicable
+        ...(isGuest && {
+          guestName,
+          guestEmail,
+          guestPhone
+        })
+      };
+
+      await bookAppointment(appointmentData as any);
+      
+      if (isGuest) {
+        toast.success('Guest appointment booked! Please check your email for confirmation.');
+        navigate('/');
+      } else {
+        navigate('/patient/appointments');
+      }
     } catch (err) {
       setIsSubmitting(false);
     }
   };
 
-  if (!currentUser) return null;
+  if (!currentUser && !isGuest) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 lg:py-20">
@@ -217,6 +236,49 @@ export default function BookAppointment() {
             {/* Right side - Form */}
             <div className="md:w-2/3 p-8 md:p-10">
               <form onSubmit={handleSubmit} className="space-y-6">
+                {isGuest && (
+                  <div className="bg-indigo-50/50 p-6 rounded-2xl border border-indigo-100 mb-6 space-y-4">
+                    <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
+                       <User className="h-4 w-4" /> Guest Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Your Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={guestName}
+                          onChange={(e) => setGuestName(e.target.value)}
+                          placeholder="e.g. Ramesh"
+                          className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Email</label>
+                        <input
+                          type="email"
+                          required
+                          value={guestEmail}
+                          onChange={(e) => setGuestEmail(e.target.value)}
+                          placeholder="ramesh@gmail.com"
+                          className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        />
+                      </div>
+                      <div className="col-span-full space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase">Phone Number</label>
+                        <input
+                          type="tel"
+                          required
+                          value={guestPhone}
+                          onChange={(e) => setGuestPhone(e.target.value)}
+                          placeholder="+91 98765 43210"
+                          className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Department Selection */}
                   <div className="space-y-2">

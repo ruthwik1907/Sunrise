@@ -6,7 +6,9 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 export default function AdminReports() {
-  const { appointments, invoices, departments, users } = useAppContext();
+  const { currentUser, appointments, invoices, departments, users } = useAppContext();
+
+  if (!currentUser) return null;
 
   const handleExportReport = () => {
     const doc = new jsPDF();

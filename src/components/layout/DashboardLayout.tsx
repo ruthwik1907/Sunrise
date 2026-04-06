@@ -4,14 +4,17 @@ import { useAppContext } from '../../context/AppContext';
 import {
   LayoutDashboard, Calendar, FileText, CreditCard, MessageSquare, Settings,
   Users, UserPlus, Activity, PieChart, Building, Loader2, Bed, Wrench,
-  Pill, Menu, X, LogOut, ChevronRight
+  Pill, Menu, X, LogOut, ChevronRight, Bell, Info
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export const DashboardLayout = ({ allowedRoles }: { allowedRoles: string[] }) => {
-  const { currentUser, isAuthReady, logout } = useAppContext();
+  const { currentUser, isAuthReady, logout, notifications, markNotificationRead } = useAppContext();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notifsOpen, setNotifsOpen] = useState(false);
+  
+  const unreadCount = notifications ? notifications.filter(n => !n.read).length : 0;
 
   // Close sidebar when route changes (mobile nav)
   useEffect(() => {
@@ -61,6 +64,7 @@ export const DashboardLayout = ({ allowedRoles }: { allowedRoles: string[] }) =>
 
   const adminLinks = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+    { name: 'User Management', href: '/admin/users', icon: Users },
     { name: 'Doctors', href: '/admin/doctors', icon: UserPlus },
     { name: 'Patients', href: '/admin/patients', icon: Users },
     { name: 'Appointments', href: '/admin/appointments', icon: Calendar },
@@ -173,7 +177,74 @@ export const DashboardLayout = ({ allowedRoles }: { allowedRoles: string[] }) =>
         </span>
 
         {/* Desktop: user name + role */}
-        <div className="hidden lg:flex items-center gap-2 ml-auto">
+        <div className="hidden lg:flex items-center gap-4 ml-auto">
+          {/* Notification Bell */}
+          <div className="relative">
+            <button 
+              onClick={() => setNotifsOpen(!notifsOpen)}
+              className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition-all relative group"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+              )}
+            </button>
+
+            {/* Notification Dropdown */}
+            {notifsOpen && (
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="px-4 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                  <h3 className="text-sm font-bold text-slate-900">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-full">
+                      {unreadCount} New
+                    </span>
+                  )}
+                </div>
+                <div className="max-h-[320px] overflow-y-auto">
+                  {notifications.length > 0 ? (
+                    notifications.map((notif) => (
+                      <button
+                        key={notif.id}
+                        onClick={() => {
+                          markNotificationRead(notif.id);
+                          setNotifsOpen(false);
+                        }}
+                        className={cn(
+                          "w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex gap-3 items-start",
+                          !notif.read && "bg-indigo-50/30"
+                        )}
+                      >
+                        <div className={cn(
+                          "h-8 w-8 rounded-full shrink-0 flex items-center justify-center",
+                          notif.type === 'appointment' ? "bg-blue-100 text-blue-600" :
+                          notif.type === 'report' ? "bg-emerald-100 text-emerald-600" :
+                          "bg-amber-100 text-amber-600"
+                        )}>
+                          {notif.type === 'appointment' ? <Calendar className="h-4 w-4" /> :
+                           notif.type === 'report' ? <FileText className="h-4 w-4" /> :
+                           <Info className="h-4 w-4" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-slate-900 font-medium leading-tight mb-1">{notif.title}</p>
+                          <p className="text-xs text-slate-500 line-clamp-2">{notif.message}</p>
+                          <p className="text-[10px] text-slate-400 mt-1">{new Date(notif.timestamp).toLocaleDateString()}</p>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-8 py-10 text-center">
+                      <Bell className="h-10 w-10 text-slate-200 mx-auto mb-3" />
+                      <p className="text-sm text-slate-500">No notifications yet.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="h-8 w-[1px] bg-slate-200" />
+          
           <div className="text-right">
             <p className="text-xs font-semibold text-slate-900">{currentUser.name}</p>
             <p className="text-xs text-slate-500 capitalize">{roleLabel}</p>

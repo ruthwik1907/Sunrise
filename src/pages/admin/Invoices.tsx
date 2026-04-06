@@ -6,11 +6,12 @@ import {
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { generateClinicalPDF, InvoiceData } from '../../lib/pdf';
 
 type CategoryFilter = 'all' | 'consultation' | 'medication' | 'lab_test';
 
 export default function AdminInvoices() {
-  const { invoices, users, bills } = useAppContext();
+  const { invoices, users, bills, hospitalSettings, currentUser } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
@@ -96,50 +97,31 @@ export default function AdminInvoices() {
   };
 
   const downloadInvoicePDF = (invoice: any) => {
-    const patient = users.find(u => u.id === invoice.patientId);
-    const doc = new jsPDF();
-    doc.setFontSize(22);
-    doc.setTextColor(79, 70, 229);
-    doc.text('Sunrise Hospital — INVOICE', 105, 20, { align: 'center' });
-    doc.setFontSize(10);
-    doc.setTextColor(100, 116, 139);
-    doc.text(`Invoice #: ${invoice.id.substring(0, 8).toUpperCase()}`, 20, 35);
-    doc.text(`Date: ${new Date(invoice.date).toLocaleDateString()}`, 20, 42);
-    doc.text(`Due: ${new Date(invoice.dueDate).toLocaleDateString()}`, 20, 49);
-    doc.text(`Status: ${invoice.status.toUpperCase()}`, 20, 56);
-    doc.setFontSize(12); doc.setTextColor(0);
-    doc.text('Bill To:', 140, 35);
-    doc.setFontSize(10); doc.setTextColor(100, 116, 139);
-    doc.text(`Patient: ${patient?.name || 'Unknown'}`, 140, 42);
-    doc.text(`Email: ${patient?.email || 'N/A'}`, 140, 49);
-    const tableColumn = ['Description', 'Type', 'Amount', 'GST %', 'GST Amt', 'Total'];
-    const tableRows = invoice.items.map((item: any) => [
-      item.description,
-      item.type.charAt(0).toUpperCase() + item.type.slice(1).replace('_', ' '),
-      `₹${(item.amount || 0).toFixed(2)}`,
-      `${item.taxRate || 0}%`,
-      `₹${(item.taxAmount || 0).toFixed(2)}`,
-      `₹${((item.amount || 0) + (item.taxAmount || 0)).toFixed(2)}`
-    ]);
-    (doc as any).autoTable({
-      startY: 70, head: [tableColumn], body: tableRows,
-      theme: 'striped',
-      headStyles: { fillColor: [79, 70, 229], textColor: 255 },
-      styles: { fontSize: 8, cellPadding: 3 },
-      columnStyles: { 2: { halign: 'right' }, 3: { halign: 'center' }, 4: { halign: 'right' }, 5: { halign: 'right' } }
-    });
-    const finalY = (doc as any).lastAutoTable.finalY || 70;
-    doc.setFontSize(10); doc.setTextColor(100, 116, 139);
-    doc.text(`Subtotal: ₹${(invoice.subtotal || invoice.amount).toFixed(2)}`, 140, finalY + 10);
-    doc.text(`CGST (9%): ₹${((invoice.totalTaxAmount || 0) / 2).toFixed(2)}`, 140, finalY + 16);
-    doc.text(`SGST (9%): ₹${((invoice.totalTaxAmount || 0) / 2).toFixed(2)}`, 140, finalY + 22);
-    doc.setFontSize(12); doc.setTextColor(0);
-    doc.text(`Total Amount: ₹${invoice.amount.toFixed(2)}`, 140, finalY + 32);
-    doc.setFontSize(9); doc.setTextColor(100, 116, 139);
-    doc.text(`GSTIN: ${invoice.gstNumber || '29AAAAA0000A1Z5'}`, 20, finalY + 32);
-    doc.setFontSize(10); doc.setTextColor(148, 163, 184);
-    doc.text('Thank you for choosing Sunrise Hospital.', 105, 280, { align: 'center' });
-    doc.save(`Invoice_${invoice.id.substring(0, 8)}.pdf`);
+    const data: InvoiceData = {
+      id: invoice.id,
+      date: invoice.date,
+      dueDate: invoice.dueDate,
+      status: invoice.status,
+      patientName: invoice.patientName || users.find(u => u.id === invoice.patientId)?.name || 'Unknown',
+      patientId: invoice.patientId,
+      patientPhone: invoice.patientPhone,
+      items: (invoice.items || []).map((item: any) => ({
+        description: item.description,
+        amount: item.amount || 0,
+        quantity: item.quantity || 1,
+        taxRate: item.taxRate || 0,
+        taxAmount: item.taxAmount || 0,
+        total: (item.amount || 0) + (item.taxAmount || 0)
+      })),
+      subtotal: invoice.subtotal || invoice.amount,
+      totalTaxAmount: invoice.totalTaxAmount || 0,
+      totalAmount: invoice.amount,
+      gstNumber: invoice.gstNumber,
+      type: getInvoiceCategory(invoice) as any,
+      billId: invoice.billId
+    };
+    
+    generateClinicalPDF(data, hospitalSettings, currentUser);
   };
 
   const categoryTabs: { id: CategoryFilter; label: string; icon: React.ReactNode }[] = [

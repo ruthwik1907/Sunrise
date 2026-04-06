@@ -44,7 +44,7 @@ export default function PatientAppointments() {
           <p className="text-slate-500 text-sm mt-1">Manage your upcoming and past medical appointments.</p>
         </div>
         <Link 
-          to="/book-appointment" 
+          to="/book" 
           className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-colors"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -166,7 +166,7 @@ export default function PatientAppointments() {
                       <h3 className="text-sm font-medium text-slate-900">No appointments found</h3>
                       <p className="text-sm text-slate-500 mt-1">Try adjusting your filters or book a new appointment.</p>
                       <Link 
-                        to="/book-appointment" 
+                        to="/book" 
                         className="mt-4 inline-flex items-center px-4 py-2 border border-slate-300 shadow-sm text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50"
                       >
                         <Plus className="h-4 w-4 mr-2" />

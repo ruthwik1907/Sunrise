@@ -31,7 +31,7 @@ export default function AdminDashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-shadow">
+        <Link to="/admin/users?role=doctor" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all hover:scale-[1.02]">
           <div className="flex justify-between items-start mb-4">
             <div className="bg-indigo-50 p-3 rounded-xl text-indigo-600">
               <UserPlus className="h-6 w-6" />
@@ -44,9 +44,9 @@ export default function AdminDashboard() {
             <p className="text-2xl font-bold text-slate-900">{totalDoctors}</p>
             <p className="text-sm font-medium text-slate-500">Total Doctors</p>
           </div>
-        </div>
+        </Link>
         
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-shadow">
+        <Link to="/admin/users?role=patient" className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all hover:scale-[1.02]">
           <div className="flex justify-between items-start mb-4">
             <div className="bg-emerald-50 p-3 rounded-xl text-emerald-600">
               <Users className="h-6 w-6" />
@@ -59,7 +59,7 @@ export default function AdminDashboard() {
             <p className="text-2xl font-bold text-slate-900">{totalPatients}</p>
             <p className="text-sm font-medium text-slate-500">Total Patients</p>
           </div>
-        </div>
+        </Link>
         
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start mb-4">

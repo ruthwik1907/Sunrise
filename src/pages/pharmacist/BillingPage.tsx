@@ -1,13 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { 
-  Plus, Trash2, Printer, CheckCircle, Search, 
-  User, CreditCard, ShoppingBag, FileText, AlertCircle, Pill
+  Search, Pill, Plus, Trash2, FileText, CheckCircle, Printer, Download, 
+  History, Calendar, User, ShoppingCart, Calculator, ArrowRight
 } from 'lucide-react';
+import { generateClinicalPDF, InvoiceData } from '../../lib/pdf';
 import toast from 'react-hot-toast';
 
 export default function BillingPage() {
-  const { inventory, generatePharmacyBill, currentUser, hospitalSettings, users, bills } = useAppContext();
+  const { 
+    currentUser, users, inventory, bills, 
+    generatePharmacyBill, hospitalSettings 
+  } = useAppContext();
   
   // Tab State
   const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
@@ -25,7 +29,6 @@ export default function BillingPage() {
   const [gstPercent, setGstPercent] = useState(18); // Default 18%
   
   const [isGenerating, setIsGenerating] = useState(false);
-  const [lastGeneratedBill, setLastGeneratedBill] = useState<any>(null);
 
   // Filtered inventory based on search
   const filteredInventory = useMemo(() => {
@@ -108,7 +111,7 @@ export default function BillingPage() {
 
     setIsGenerating(true);
     try {
-      await generatePharmacyBill({
+      const bill = await generatePharmacyBill({
         patientId: patientId || `WALK-${Date.now()}`,
         patientName,
         patientPhone,
@@ -117,6 +120,32 @@ export default function BillingPage() {
         gst: gstAmount,
         totalAmount
       });
+      
+      // Generate PDF
+      const data: InvoiceData = {
+        id: bill.id,
+        date: bill.createdAt || new Date().toISOString(),
+        dueDate: bill.createdAt || new Date().toISOString(),
+        status: 'paid',
+        patientName: bill.patientName,
+        patientId: bill.patientId,
+        patientPhone: bill.patientPhone,
+        items: (bill.medicines || []).map((m: any) => ({
+          description: m.name,
+          amount: m.price,
+          quantity: m.quantity,
+          taxRate: 0,
+          taxAmount: 0,
+          total: m.total
+        })),
+        subtotal: bill.subtotal,
+        totalTaxAmount: bill.gst || 0,
+        totalAmount: bill.totalAmount,
+        type: 'pharmacy',
+        billId: bill.billId
+      };
+      generateClinicalPDF(data, hospitalSettings, currentUser);
+
       // Clear form
       setPatientName('');
       setPatientId('');
@@ -133,10 +162,6 @@ export default function BillingPage() {
         b.billId.toLowerCase().includes(searchTerm.toLowerCase())
      ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [bills, searchTerm]);
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   return (
     <div className="space-y-6 pb-20">
@@ -407,16 +432,33 @@ export default function BillingPage() {
                              <td className="py-5 text-right">
                                 <button 
                                   onClick={() => {
-                                    // Set data and trigger print
-                                    setPatientName(bill.patientName);
-                                    setPatientId(bill.patientId);
-                                    setSelectedMedicines(bill.medicines);
-                                    setLastGeneratedBill(bill);
-                                    setTimeout(() => window.print(), 100);
+                                    const data: InvoiceData = {
+                                      id: bill.id,
+                                      date: bill.createdAt,
+                                      dueDate: bill.createdAt,
+                                      status: 'paid',
+                                      patientName: bill.patientName,
+                                      patientId: bill.patientId,
+                                      patientPhone: bill.patientPhone,
+                                      items: (bill.medicines || []).map((m: any) => ({
+                                        description: m.name,
+                                        amount: m.price,
+                                        quantity: m.quantity,
+                                        taxRate: 0,
+                                        taxAmount: 0,
+                                        total: m.total
+                                      })),
+                                      subtotal: bill.subtotal,
+                                      totalTaxAmount: bill.gst || 0,
+                                      totalAmount: bill.totalAmount,
+                                      type: 'pharmacy',
+                                      billId: bill.billId
+                                    };
+                                    generateClinicalPDF(data, hospitalSettings, currentUser);
                                   }}
                                   className="p-3 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                                 >
-                                   <Printer className="w-4 h-4" />
+                                   <Download className="w-4 h-4" />
                                 </button>
                              </td>
                           </tr>
@@ -427,111 +469,6 @@ export default function BillingPage() {
            </div>
         </div>
       )}
-
-      {/* ── PRINT AREA (only visible during print) ── */}
-      <div id="invoice-print-area" className="hidden print:block print:p-8 bg-white max-w-A4 mx-auto text-black font-sans leading-relaxed">
-        <div className="border-4 border-slate-900 p-6 md:p-10 relative overflow-hidden">
-          {/* Header */}
-          <div className="flex justify-between items-start mb-8 border-b-2 border-slate-200 pb-6">
-            <div>
-              <h1 className="text-3xl font-black uppercase tracking-tighter text-slate-900">{hospitalSettings?.name || 'Sunrise Hospital'}</h1>
-              <p className="text-sm font-bold text-slate-600 mt-1">{hospitalSettings?.address || '19/472, Old Check Post Circle, Renigunta'}</p>
-              <div className="flex gap-4 mt-2 text-xs font-semibold text-slate-500">
-                <span>Ph: {hospitalSettings?.phone || '+91 94949 94220'}</span>
-                <span>Email: {hospitalSettings?.email || 'contact@sunrisehospital.com'}</span>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="bg-slate-900 text-white px-3 py-1 text-xs font-black uppercase tracking-widest rounded-sm mb-4 inline-block">Pharmacy Invoice</span>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Invoice Date</p>
-              <p className="text-sm font-black">{new Date().toLocaleDateString()}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-8 mb-8 bg-slate-50 p-4 rounded-lg">
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Billed To (Patient)</p>
-              <p className="text-lg font-black text-slate-900">{patientName || 'Walk-in Patient'}</p>
-              {patientId && <p className="text-xs font-bold text-slate-500">ID: {patientId}</p>}
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Invoice ID</p>
-              <p className="text-lg font-black text-slate-900">#{lastGeneratedBill?.billId || '---'}</p>
-              <p className="text-xs font-bold text-slate-500">Issued by: {currentUser?.name || 'Pharmacist'}</p>
-            </div>
-          </div>
-
-          {/* Table */}
-          <table className="w-full mb-8">
-            <thead className="border-b-2 border-slate-900">
-              <tr>
-                <th className="py-3 text-left text-xs font-black uppercase text-slate-400">Medicine Name</th>
-                <th className="py-3 text-center text-xs font-black uppercase text-slate-400">Qty</th>
-                <th className="py-3 text-right text-xs font-black uppercase text-slate-400">Price</th>
-                <th className="py-3 text-right text-xs font-black uppercase text-slate-400">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {selectedMedicines.map((m, idx) => (
-                <tr key={idx}>
-                  <td className="py-3 font-bold text-slate-800">{m.name}</td>
-                  <td className="py-3 text-center font-bold text-slate-600">{m.quantity}</td>
-                  <td className="py-3 text-right font-bold text-slate-600">₹{m.price.toFixed(2)}</td>
-                  <td className="py-3 text-right font-black text-slate-900">₹{m.total.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Totals */}
-          <div className="flex justify-end pt-4">
-            <div className="w-64 space-y-2">
-              <div className="flex justify-between text-xs font-bold text-slate-500 uppercase">
-                <span>Subtotal</span>
-                <span>₹{subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between text-xs font-bold text-slate-500 uppercase">
-                <span>GST ({gstPercent}%)</span>
-                <span>₹{gstAmount.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between py-3 border-t border-slate-100 border-b-2 border-slate-900 text-lg font-black text-slate-900 uppercase">
-                <span>Total Due</span>
-                <span>₹{totalAmount.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-16 pt-8 border-t border-slate-100 text-center">
-            <p className="text-sm font-black text-slate-900 mb-1 italic">"Thank you. Get well soon."</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Computer Generated Invoice - No signature required</p>
-          </div>
-        </div>
-
-        {/* Sidebar strip in print */}
-        <div className="absolute right-0 top-0 bottom-0 w-2 bg-indigo-600 h-full"></div>
-      </div>
-
-      <style>{`
-        @media print {
-          body * { visibility: hidden; background: white !important; }
-          #invoice-print-area, #invoice-print-area * { visibility: visible; }
-          #invoice-print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 0;
-          }
-          .no-print { display: none !important; }
-          header, aside, footer { display: none !important; }
-        }
-        @page {
-          size: A4;
-          margin: 0;
-        }
-      `}</style>
     </div>
   );
 }
