@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+# Firebase service account credentials
+service-account.json
+scripts/service-account.json
