@@ -531,10 +531,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       await updateDoc(docRef, updateData);
       await recordAuditLog('delete', collectionName, id, `Soft deleted ${id}`, oldData, { ...oldData, ...updateData });
-      toast.success('Successfully deleted');
+      // NOTE: No toast here — callers are responsible for their own feedback
     } catch (error: any) {
-      console.error('Delete failed:', error);
-      toast.error('Failed to delete');
+      const code: string = error?.code || '';
+      if (code === 'permission-denied') {
+        toast.error('❌ Permission denied. Only admins can delete records. Check Firestore rules.');
+      } else {
+        toast.error(`❌ Delete failed: ${error?.message || 'Unknown error'}`);
+      }
+      console.error('[softDeleteDoc]', collectionName, id, error);
       throw error;
     }
   };
@@ -794,61 +799,114 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(doc(db, 'prescriptions', id), withUpdateMetadata({ status }));
   };
 
+  /** Helper: translate Firebase Auth error codes into human-readable toasts */
+  const handleAuthError = (error: any, role: string): string => {
+    const code: string = error?.code || '';
+    const messages: Record<string, string> = {
+      'auth/operation-not-allowed':
+        '❌ Email/Password sign-in is DISABLED in Firebase Console. Go to Authentication → Sign-in method → Enable Email/Password.',
+      'auth/email-already-in-use':
+        '❌ This email is already registered. Use a different email or check existing users.',
+      'auth/invalid-email':
+        '❌ Invalid email address. Please check the email field.',
+      'auth/weak-password':
+        '❌ Password is too weak. Use at least 6 characters.',
+      'auth/network-request-failed':
+        '❌ Network blocked. Disable your ad-blocker for localhost and try again.',
+      'auth/too-many-requests':
+        '❌ Too many requests. Wait a moment and try again.',
+    };
+    const msg = messages[code] || `❌ Failed to add ${role}: ${code || error?.message || 'Unknown error'}`;
+    console.error(`[addStaff:${role}]`, code, error);
+    return msg;
+  };
+
   const addDoctor = async (data: Partial<User> & { password?: string }) => {
-    const res = await createUserWithEmailAndPassword(secondaryAuth, data.email || '', data.password || '123456');
-    const doctor: User = withCreateMetadata({
-      id: res.user.uid,
-      name: data.name || 'Doctor',
-      email: data.email || '',
-      role: 'doctor',
-      status: 'active',
-      ...data
-    });
-    await setDoc(doc(db, 'users', res.user.uid), doctor);
-    await recordAuditLog('create', 'users', res.user.uid, `Added doctor ${doctor.name}`, null, doctor);
-    await signOut(secondaryAuth);
+    try {
+      const res = await createUserWithEmailAndPassword(secondaryAuth, data.email || '', data.password || 'Hospital@123');
+      const doctor: User = withCreateMetadata({
+        id: res.user.uid,
+        name: data.name || 'Doctor',
+        email: data.email || '',
+        role: 'doctor',
+        status: 'active',
+        ...data,
+      });
+      delete (doctor as any).password;
+      await setDoc(doc(db, 'users', res.user.uid), doctor);
+      await recordAuditLog('create', 'users', res.user.uid, `Added doctor ${doctor.name}`, null, doctor);
+      await signOut(secondaryAuth);
+      toast.success(`Doctor ${doctor.name} added successfully!`);
+    } catch (error: any) {
+      toast.error(handleAuthError(error, 'doctor'), { duration: 6000 });
+      throw error;
+    }
   };
 
   const addReceptionist = async (data: Partial<User> & { password?: string }) => {
-    const res = await createUserWithEmailAndPassword(secondaryAuth, data.email || '', data.password || '123456');
-    const user: User = withCreateMetadata({
-      id: res.user.uid,
-      name: data.name || 'Receptionist',
-      email: data.email || '',
-      role: 'receptionist',
-      status: 'active',
-      ...data
-    });
-    await setDoc(doc(db, 'users', res.user.uid), user);
-    await signOut(secondaryAuth);
+    try {
+      const res = await createUserWithEmailAndPassword(secondaryAuth, data.email || '', data.password || 'Hospital@123');
+      const user: User = withCreateMetadata({
+        id: res.user.uid,
+        name: data.name || 'Receptionist',
+        email: data.email || '',
+        role: 'receptionist',
+        status: 'active',
+        ...data,
+      });
+      delete (user as any).password;
+      await setDoc(doc(db, 'users', res.user.uid), user);
+      await recordAuditLog('create', 'users', res.user.uid, `Added receptionist ${user.name}`, null, user);
+      await signOut(secondaryAuth);
+      toast.success(`Receptionist ${user.name} added successfully!`);
+    } catch (error: any) {
+      toast.error(handleAuthError(error, 'receptionist'), { duration: 6000 });
+      throw error;
+    }
   };
 
   const addPharmacist = async (data: Partial<User> & { password?: string }) => {
-    const res = await createUserWithEmailAndPassword(secondaryAuth, data.email || '', data.password || '123456');
-    const user: User = withCreateMetadata({
-      id: res.user.uid,
-      name: data.name || 'Pharmacist',
-      email: data.email || '',
-      role: 'pharmacist',
-      status: 'active',
-      ...data
-    });
-    await setDoc(doc(db, 'users', res.user.uid), user);
-    await signOut(secondaryAuth);
+    try {
+      const res = await createUserWithEmailAndPassword(secondaryAuth, data.email || '', data.password || 'Hospital@123');
+      const user: User = withCreateMetadata({
+        id: res.user.uid,
+        name: data.name || 'Pharmacist',
+        email: data.email || '',
+        role: 'pharmacist',
+        status: 'active',
+        ...data,
+      });
+      delete (user as any).password;
+      await setDoc(doc(db, 'users', res.user.uid), user);
+      await recordAuditLog('create', 'users', res.user.uid, `Added pharmacist ${user.name}`, null, user);
+      await signOut(secondaryAuth);
+      toast.success(`Pharmacist ${user.name} added successfully!`);
+    } catch (error: any) {
+      toast.error(handleAuthError(error, 'pharmacist'), { duration: 6000 });
+      throw error;
+    }
   };
 
   const addLabTechnician = async (data: Partial<User> & { password?: string }) => {
-    const res = await createUserWithEmailAndPassword(secondaryAuth, data.email || '', data.password || '123456');
-    const user: User = withCreateMetadata({
-      id: res.user.uid,
-      name: data.name || 'Technician',
-      email: data.email || '',
-      role: 'lab_technician',
-      status: 'active',
-      ...data
-    });
-    await setDoc(doc(db, 'users', res.user.uid), user);
-    await signOut(secondaryAuth);
+    try {
+      const res = await createUserWithEmailAndPassword(secondaryAuth, data.email || '', data.password || 'Hospital@123');
+      const user: User = withCreateMetadata({
+        id: res.user.uid,
+        name: data.name || 'Technician',
+        email: data.email || '',
+        role: 'lab_technician',
+        status: 'active',
+        ...data,
+      });
+      delete (user as any).password;
+      await setDoc(doc(db, 'users', res.user.uid), user);
+      await recordAuditLog('create', 'users', res.user.uid, `Added lab technician ${user.name}`, null, user);
+      await signOut(secondaryAuth);
+      toast.success(`Lab Technician ${user.name} added successfully!`);
+    } catch (error: any) {
+      toast.error(handleAuthError(error, 'lab_technician'), { duration: 6000 });
+      throw error;
+    }
   };
 
   const addDepartment = async (data: Omit<Department, 'id'>) => {
@@ -1078,8 +1136,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const deleteUser = async (id: string) => {
-    await softDeleteDoc('users', id);
-    await recordAuditLog('delete', 'users', id, `Soft deleted user ${id}`);
+    try {
+      await softDeleteDoc('users', id);
+      await recordAuditLog('delete', 'users', id, `Soft deleted user ${id}`);
+      // Toast is shown by the calling UI component
+    } catch (error: any) {
+      console.error('[deleteUser]', id, error);
+    }
   };
 
   const updateHospitalSettings = async (data: Partial<HospitalSettings>) => {

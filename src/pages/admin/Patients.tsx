@@ -18,7 +18,7 @@ export default function AdminPatients() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  const patients = users.filter(u => u.role === 'patient');
+  const patients = users.filter(u => u.role === 'patient' && !u.deleted);
   
   const filteredPatients = patients.filter(p => {
     const matchesSearch = (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 

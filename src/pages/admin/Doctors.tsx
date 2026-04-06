@@ -32,7 +32,7 @@ export default function AdminStaff() {
       pharmacist: 'pharmacist',
       lab_technician: 'lab_technician'
     };
-    return users.filter(u => u.role === roleMap[role]);
+    return users.filter(u => u.role === roleMap[role] && !u.deleted);
   };
 
   const currentStaff = getRoleUsers(activeTab);

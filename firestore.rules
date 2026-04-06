@@ -2,147 +2,184 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // ===============================================================
     // Helper Functions
+    // NOTE: We avoid getUserData() inside write rules to prevent
+    //       circular read-dependency issues. Instead we use a simple
+    //       pattern: read the role from the stored user doc only once.
     // ===============================================================
-    
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+
+    // Safe role helpers — use existence check + single .data call
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
-    
-    function hasRole(role) {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == role;
+
+    function userExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
-    
-    function isStaff() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role in ['admin', 'doctor', 'receptionist', 'pharmacist', 'lab_technician'];
-    }
-    
+
     function isAdmin() {
-      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == 'admin';
+      return userExists() && userRole() == 'admin';
+    }
+
+    function isStaff() {
+      return userExists() && userRole() in ['admin', 'doctor', 'receptionist', 'pharmacist', 'lab_technician', 'lab'];
+    }
+
+    function hasRole(role) {
+      return userExists() && userRole() == role;
     }
 
     // ===============================================================
-    // Collection Rules
+    // USERS
     // ===============================================================
-
-    // Default: Deny all, then allow specific
-    match /{document=**} {
-      allow read, write: if isAdmin();
-    }
-
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.auth.uid == userId; // Enforce document ID matches UID
-      allow update: if isAdmin() || isOwner(userId);
+      // Doctors are publicly visible (for home page listing before login)
+      allow read: if isAuthenticated() || (resource != null && resource.data.role == 'doctor');
+
+      // New users can register themselves; admins can create any user
+      allow create: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+
+      // Users can update their own profile; admins can update any
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+
+      // Only admins can (soft) delete users
       allow delete: if isAdmin();
     }
 
+    // ===============================================================
+    // AUDIT LOGS — immutable, any auth user can write
+    // ===============================================================
     match /auditLogs/{logId} {
       allow read: if isAdmin();
-      allow create: if isAuthenticated(); // Every user should be able to trigger an audit log write via backend-like patterns
-      allow update, delete: if false; // Audit logs should be immutable
-    }
-
-    match /appointments/{appointmentId} {
-      allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
       allow create: if isAuthenticated();
-      allow update: if isStaff() || (isAuthenticated() && resource.data.patientId == request.auth.uid);
-      allow delete: if isAdmin();
+      allow update, delete: if false;
     }
 
-    match /medicalRecords/{recordId} {
-      allow read: if isAdmin() || hasRole('doctor') || (isAuthenticated() && resource.data.patientId == request.auth.uid);
-      allow write: if isAdmin() || hasRole('doctor');
-    }
-
-    match /prescriptions/{prescriptionId} {
-      allow read: if isStaff() || (isAuthenticated() && resource.data.patientId == request.auth.uid);
-      allow create: if isAdmin() || hasRole('doctor');
-      allow update: if isAdmin() || hasRole('doctor') || hasRole('pharmacist');
-      allow delete: if isAdmin();
-    }
-
-    match /invoices/{invoiceId} {
-      allow read: if isStaff() || (isAuthenticated() && resource.data.patientId == request.auth.uid);
-      allow write: if isAdmin() || hasRole('pharmacist') || hasRole('receptionist');
-    }
-
-    match /inventory/{itemId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin() || hasRole('pharmacist');
-    }
-
-    match /labRequests/{requestId} {
-      allow read: if isStaff() || (isAuthenticated() && resource.data.patientId == request.auth.uid);
-      allow write: if isAdmin() || hasRole('doctor') || hasRole('lab_technician');
-    }
-
-    match /labReports/{reportId} {
-      allow read: if isStaff() || (isAuthenticated() && resource.data.patientId == request.auth.uid);
-      allow write: if isAdmin() || hasRole('lab_technician');
-    }
-
-    match /beds/{bedId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin() || hasRole('receptionist');
-    }
-
-    match /equipment/{equipmentId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin() || hasRole('receptionist') || hasRole('lab_technician');
-    }
-
-    match /settings/{settingId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    match /bills/{billId} {
-      allow read: if isStaff() || (isAuthenticated() && resource.data.patientId == request.auth.uid);
-      allow write: if isAdmin() || hasRole('pharmacist');
-    }
-
-    match /adminInvoices/{invoiceId} {
-      allow read: if isAdmin();
-      allow create: if isAdmin() || hasRole('pharmacist');
-      allow update, delete: if isAdmin();
-    }
-
-    match /bedBookings/{bookingId} {
-      allow read: if isStaff() || (isAuthenticated() && resource.data.patientId == request.auth.uid);
-      allow write: if isAdmin() || hasRole('doctor') || hasRole('receptionist');
-    }
-
-    match /messages/{messageId} {
-      allow read: if isAuthenticated() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid);
-      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
-      allow update: if isAuthenticated() && (resource.data.receiverId == request.auth.uid); // Mark read
-      allow delete: if isAdmin();
-    }
-
+    // ===============================================================
+    // PUBLIC COLLECTIONS (no auth needed for read)
+    // ===============================================================
     match /departments/{departmentId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     match /doctorSchedules/{scheduleId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && (isAdmin() || hasRole('doctor'));
+    }
+
+    match /beds/{bedId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && (isAdmin() || hasRole('receptionist'));
+    }
+
+    match /equipment/{equipmentId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && (isAdmin() || hasRole('receptionist') || hasRole('lab_technician'));
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ===============================================================
+    // APPOINTMENTS
+    // ===============================================================
+    match /appointments/{appointmentId} {
+      allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // ===============================================================
+    // CLINICAL — Medical Records, Prescriptions, Lab
+    // ===============================================================
+    match /medicalRecords/{recordId} {
+      allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
+      allow write: if isAuthenticated() && (isAdmin() || hasRole('doctor'));
+    }
+
+    match /prescriptions/{prescriptionId} {
+      allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
+      allow create: if isAuthenticated() && (isAdmin() || hasRole('doctor'));
+      allow update: if isAuthenticated() && (isAdmin() || hasRole('doctor') || hasRole('pharmacist'));
+      allow delete: if isAdmin();
+    }
+
+    match /labRequests/{requestId} {
+      allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
+      allow write: if isAuthenticated() && (isAdmin() || hasRole('doctor') || hasRole('lab_technician'));
+    }
+
+    match /labReports/{reportId} {
+      allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
+      allow write: if isAuthenticated() && (isAdmin() || hasRole('lab_technician'));
+    }
+
+    // ===============================================================
+    // BILLING & PHARMACY
+    // ===============================================================
+    match /invoices/{invoiceId} {
+      allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
+      allow write: if isAuthenticated() && (isAdmin() || hasRole('pharmacist') || hasRole('receptionist'));
+    }
+
+    match /bills/{billId} {
+      allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
+      allow write: if isAuthenticated() && (isAdmin() || hasRole('pharmacist'));
+    }
+
+    match /adminInvoices/{invoiceId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && (isAdmin() || hasRole('pharmacist'));
+      allow update, delete: if isAdmin();
+    }
+
+    match /inventory/{itemId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() || hasRole('doctor');
+      allow write: if isAuthenticated() && (isAdmin() || hasRole('pharmacist'));
+    }
+
+    // ===============================================================
+    // BEDS & EQUIPMENT BOOKINGS
+    // ===============================================================
+    match /bedBookings/{bookingId} {
+      allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
+      allow write: if isAuthenticated() && (isAdmin() || hasRole('doctor') || hasRole('receptionist'));
     }
 
     match /equipmentBookings/{bookingId} {
-      allow read: if isStaff() || (isAuthenticated() && resource.data.patientId == request.auth.uid);
-      allow write: if isAdmin() || hasRole('doctor') || hasRole('receptionist');
+      allow read: if isAuthenticated() && (isStaff() || resource.data.patientId == request.auth.uid);
+      allow write: if isAuthenticated() && (isAdmin() || hasRole('doctor') || hasRole('receptionist'));
+    }
+
+    // ===============================================================
+    // MESSAGES & NOTIFICATIONS
+    // ===============================================================
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.receiverId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAdmin();
     }
   }
 }
