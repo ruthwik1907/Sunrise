@@ -32,7 +32,7 @@ export default function PharmacistDashboard() {
   const [isDispensing, setIsDispensing] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: '', category: '', stock: 0, unitPrice: 0,
+    name: '', category: '', stock: 0, price: 0, unitPrice: 0,
     expiryDate: '', manufacturer: '', reorderLevel: 10,
   });
 
@@ -71,7 +71,7 @@ export default function PharmacistDashboard() {
 
   // --- Inventory CRUD ---
   const openAddModal = () => {
-    setFormData({ name: '', category: '', stock: 0, unitPrice: 0, expiryDate: '', manufacturer: '', reorderLevel: 10 });
+    setFormData({ name: '', category: '', stock: 0, price: 0, unitPrice: 0, expiryDate: '', manufacturer: '', reorderLevel: 10 });
     setEditingItem(null);
     setShowAddModal(true);
   };
@@ -79,7 +79,8 @@ export default function PharmacistDashboard() {
   const openEditModal = (item: InventoryItem) => {
     setFormData({
       name: item.name, category: item.category, stock: item.stock,
-      unitPrice: item.unitPrice, expiryDate: item.expiryDate,
+      price: item.price || item.unitPrice, unitPrice: item.unitPrice || item.price, 
+      expiryDate: item.expiryDate,
       manufacturer: item.manufacturer || '', reorderLevel: item.reorderLevel,
     });
     setEditingItem(item);
@@ -574,7 +575,10 @@ export default function PharmacistDashboard() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5">Unit Price (₹) *</label>
-                  <input type="number" min="0" step="0.01" value={formData.unitPrice} onChange={e => setFormData(p => ({ ...p, unitPrice: Number(e.target.value) }))}
+                  <input type="number" min="0" step="0.01" value={formData.unitPrice} onChange={e => {
+                    const val = Number(e.target.value);
+                    setFormData(p => ({ ...p, unitPrice: val, price: val }));
+                  }}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
                 <div>
