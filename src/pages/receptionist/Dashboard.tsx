@@ -6,10 +6,10 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-type TabType = 'queue' | 'checkin' | 'walkin' | 'opd' | 'doctors';
+type TabType = 'queue' | 'checkin' | 'walkin' | 'opd' | 'doctors' | 'checkout' | 'labs';
 
 export default function ReceptionistDashboard() {
-  const { currentUser, appointments, users, updateAppointmentStatus, createAppointment, createWalkInPatient } = useAppContext();
+  const { currentUser, appointments, users, updateAppointmentStatus, createAppointment, createWalkInPatient, bedBookings, equipmentBookings, beds, equipment, generateServiceInvoice, labRequests } = useAppContext();
   const [activeTab, setActiveTab] = useState<TabType>('queue');
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewAppointment, setShowNewAppointment] = useState(false);
@@ -77,6 +77,8 @@ Total Patients: ${todayApts.length}
     { id: 'walkin', label: 'Walk-in / New Appt' },
     { id: 'opd', label: 'OPD Register', count: todayApts.length },
     { id: 'doctors', label: 'Doctor Availability', count: doctors.length },
+    { id: 'checkout', label: 'Clinical Checkout', count: bedBookings.filter(b => b.status === 'active').length + equipmentBookings.filter(b => b.status === 'active').length },
+    { id: 'labs', label: 'Laboratory Hub', count: labRequests.filter(r => r.status !== 'completed').length },
   ];
 
   return (
@@ -360,7 +362,7 @@ Total Patients: ${todayApts.length}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-slate-900 truncate">Dr. {doctor.name}</p>
-                          <p className="text-xs text-slate-500 truncate">{doctor.specialization || doctor.department || 'General'}</p>
+                          <p className="text-xs text-slate-500 truncate">{doctor.specialization || doctor.department || doctor.departmentId || 'General'}</p>
                         </div>
                         <span className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                           isBusy ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'

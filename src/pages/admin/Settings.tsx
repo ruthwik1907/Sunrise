@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext, User, HospitalSettings, AuditLog } from '../../context/AppContext';
-import { Settings as SettingsIcon, User as UserIcon, Bell, Shield, Key, Smartphone, Mail, Save, Building, Globe, Database, Users, Plus, Edit2, Trash2, CheckCircle2, History, ClipboardList, Search, Filter, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { 
+  Settings as SettingsIcon, User as UserIcon, Bell, Shield, Key, Smartphone, Mail, 
+  Save, Building, Globe, Database, Users, Plus, Edit2, Trash2, CheckCircle2, 
+  History, ClipboardList, Search, Filter, Calendar as CalendarIcon, Clock,
+  Activity, UserPlus, ChevronRight 
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 
@@ -110,8 +115,8 @@ export default function AdminSettings() {
     .filter(log => {
       const matchesSearch = searchTerm === '' || 
         log.details?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.performerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.collection.toLowerCase().includes(searchTerm.toLowerCase());
+        log.userName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.module?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesAction = filterAction === 'all' || log.action === filterAction;
       return matchesSearch && matchesAction;
     })
@@ -529,7 +534,7 @@ export default function AdminSettings() {
                              <span className="text-xs font-medium truncate">{admin.email}</span>
                         </div>
                         <div className="flex items-center gap-3 text-slate-500">
-                             < smartphone className="w-4 h-4" />
+                             <Smartphone className="w-4 h-4" />
                              <span className="text-xs font-medium">{admin.phone || 'No phone set'}</span>
                         </div>
                     </div>
@@ -598,14 +603,14 @@ export default function AdminSettings() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-extrabold text-slate-900 truncate">{log.details || `Performed ${log.action} on ${log.collection}`}</span>
-                          <span className="px-2 py-0.5 bg-slate-100 rounded-full text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">{log.collection}</span>
+                          <span className="text-sm font-extrabold text-slate-900 truncate">{log.details || `Performed ${log.action} on ${log.module}`}</span>
+                          <span className="px-2 py-0.5 bg-slate-100 rounded-full text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">{log.module}</span>
                         </div>
                         <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
                            <div className="flex items-center gap-1.5">
                               <UserIcon className="h-3 w-3" />
-                              <span className="text-slate-600">{log.performerName}</span>
-                              <span className="text-[10px] px-1.5 py-0.5 bg-slate-50 border border-slate-100 rounded text-slate-400 uppercase tracking-tight">{log.performerRole}</span>
+                              <span className="text-slate-600">{log.userName}</span>
+                              <span className="text-[10px] px-1.5 py-0.5 bg-slate-50 border border-slate-100 rounded text-slate-400 uppercase tracking-tight">{log.userRole}</span>
                            </div>
                            <div className="h-3 w-px bg-slate-100"></div>
                            <div className="flex items-center gap-1.5">
@@ -629,17 +634,118 @@ export default function AdminSettings() {
             </div>
           )}
 
-          {(activeTab === 'integrations') && (
-            <div className="flex flex-col items-center justify-center h-full text-center space-y-6 animate-in fade-in duration-500 max-w-md mx-auto">
-              <div className="p-6 bg-amber-50 rounded-[2.5rem] text-amber-600 shadow-inner">
-                <Database className="w-12 h-12" />
+          {activeTab === 'integrations' && (
+            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+              <div className="flex items-center gap-4">
+                <div className="h-14 w-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100/50">
+                  <Database className="h-7 w-7" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900">API & External Integrations</h2>
+                  <p className="text-sm text-slate-500 mt-1">Manage machine-to-machine connections and HIS synchronization.</p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">Under Construction</h3>
-                <p className="text-slate-500 mt-3 text-sm font-medium leading-relaxed">The API Gateway and external hospital database connectors are currently being finalized for high-security environments.</p>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* API Gateway Panel */}
+                <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden group">
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-8">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
+                          <Key className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-lg font-bold">API Gateway</h3>
+                      </div>
+                      <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">Operational</span>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div>
+                        <label className="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-2">Master API Key</label>
+                        <div className="flex items-center gap-2">
+                           <div className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 font-mono text-xs text-slate-300 truncate">
+                              ••••••••••••••••••••••••••••••••
+                           </div>
+                           <button className="p-3 bg-white/10 hover:bg-white/20 rounded-xl transition-all">
+                              <Search className="w-4 h-4" />
+                           </button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-400 leading-relaxed">Use this key for server-side HL7/FHIR integrations only. Never expose it in client-side code.</p>
+                    </div>
+                  </div>
+                  <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-600/20 blur-3xl rounded-full group-hover:scale-150 transition-all duration-700"></div>
+                </div>
+
+                {/* HIS Connector Status */}
+                <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm relative overflow-hidden">
+                   <div className="flex items-center justify-between mb-8">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
+                          <Activity className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-lg font-bold text-slate-900">HIS Connector</h3>
+                      </div>
+                      <span className="px-3 py-1 bg-amber-50 text-amber-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">Syncing...</span>
+                   </div>
+
+                   <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                         <div className="flex items-center gap-3">
+                            <div className="h-2 w-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                            <span className="text-xs font-bold text-slate-700">HL7 v2.5 Engine</span>
+                         </div>
+                         <span className="text-[10px] font-black text-slate-400 uppercase">Latency: 24ms</span>
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                         <div className="flex items-center gap-3">
+                            <div className="h-2 w-2 bg-slate-300 rounded-full"></div>
+                            <span className="text-xs font-bold text-slate-700">FHIR R4 Endpoint</span>
+                         </div>
+                         <span className="text-[10px] font-black text-slate-400 uppercase italic">Standby</span>
+                      </div>
+                   </div>
+                </div>
               </div>
-              <div className="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full w-2/3 bg-amber-500 rounded-full animate-progress"></div>
+
+              {/* Webhooks Section */}
+              <div className="bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-100/50 p-10 overflow-hidden relative">
+                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+                    <div>
+                       <h3 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter">Event Webhooks</h3>
+                       <p className="text-sm text-slate-500 mt-1">Push clinical events to your external systems in real-time.</p>
+                    </div>
+                    <button className="px-6 py-3 bg-slate-900 text-white text-xs font-black rounded-2xl hover:bg-black transition-all shadow-xl shadow-slate-900/10">Configure New Hook</button>
+                 </div>
+
+                 <div className="space-y-3">
+                    {[
+                       { url: "https://his-sync.production.internal/hooks/v1", events: ["patient.register", "billing.complete"], active: true },
+                       { url: "https://lab-results.external.com/api/webhooks", events: ["lab.completed"], active: true },
+                       { url: "https://reports-analytics.hospital.org", events: ["invoice.paid"], active: false },
+                    ].map((hook, i) => (
+                       <div key={i} className="flex items-center gap-6 p-5 bg-slate-50/50 rounded-3xl border border-slate-100 group hover:bg-white hover:shadow-lg transition-all">
+                          <div className={`h-10 w-10 rounded-2xl flex items-center justify-center ${hook.active ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+                             <Mail className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                             <div className="flex items-center gap-3">
+                                <span className="text-sm font-bold text-slate-900 truncate">{hook.url}</span>
+                                {!hook.active && <span className="px-2 py-0.5 bg-slate-200 text-slate-500 text-[8px] font-black uppercase rounded tracking-wider">Muted</span>}
+                             </div>
+                             <div className="flex gap-2 mt-1.5 overflow-x-auto no-scrollbar pb-1">
+                                {hook.events.map(ev => (
+                                   <span key={ev} className="px-2 py-0.5 bg-indigo-50 text-indigo-600/60 text-[9px] font-black uppercase rounded-lg border border-indigo-100/50 whitespace-nowrap">{ev}</span>
+                                ))}
+                             </div>
+                          </div>
+                          <button className="p-3 text-slate-300 hover:text-slate-600 transition-all opacity-0 group-hover:opacity-100">
+                             <SettingsIcon className="w-4 h-4" />
+                          </button>
+                       </div>
+                    ))}
+                 </div>
               </div>
             </div>
           )}

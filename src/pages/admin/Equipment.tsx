@@ -16,6 +16,7 @@ export default function AdminEquipment() {
     departmentId: '',
     lastMaintenanceDate: '',
     nextMaintenanceDate: '',
+    pricePerUse: 250,
     notes: ''
   });
 
@@ -33,7 +34,7 @@ export default function AdminEquipment() {
       setEditingEquipment(null);
       setFormData({
         name: '', type: 'diagnostic', model: '', serialNumber: '', location: '',
-        departmentId: '', lastMaintenanceDate: '', nextMaintenanceDate: '', notes: ''
+        departmentId: '', lastMaintenanceDate: '', nextMaintenanceDate: '', pricePerUse: 250, notes: ''
       });
     } catch (error: any) {
       console.error('Failed to save equipment:', error);
@@ -52,6 +53,7 @@ export default function AdminEquipment() {
       departmentId: equip.departmentId,
       lastMaintenanceDate: equip.lastMaintenanceDate || '',
       nextMaintenanceDate: equip.nextMaintenanceDate || '',
+      pricePerUse: equip.pricePerUse || 250,
       notes: equip.notes || ''
     });
     setShowModal(true);
@@ -377,6 +379,17 @@ export default function AdminEquipment() {
                 </div>
               </div>
               <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Price Per Use (₹)</label>
+                <input
+                  type="number"
+                  required
+                  value={formData.pricePerUse}
+                  onChange={(e) => setFormData({ ...formData, pricePerUse: parseInt(e.target.value) || 0 })}
+                  className="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="250"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Notes (Optional)</label>
                 <textarea
                   rows={3}
@@ -394,7 +407,7 @@ export default function AdminEquipment() {
                     setEditingEquipment(null);
                     setFormData({
                       name: '', type: 'diagnostic', model: '', serialNumber: '', location: '',
-                      departmentId: '', lastMaintenanceDate: '', nextMaintenanceDate: '', notes: ''
+                      departmentId: '', lastMaintenanceDate: '', nextMaintenanceDate: '', pricePerUse: 250, notes: ''
                     });
                   }}
                   className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"

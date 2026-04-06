@@ -54,7 +54,7 @@ const TEST_CATALOG = [
 ];
 
 export default function LabTechnicianDashboard() {
-  const { currentUser, labReports, users, updateLabReportStatus, createLabReport, invoices } = useAppContext();
+  const { currentUser, labReports, users, updateLabReportStatus, createLabReport, invoices, generateServiceInvoice } = useAppContext();
   const [activeTab, setActiveTab] = useState<TabType>('pending');
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewReport, setShowNewReport] = useState(false);
@@ -74,7 +74,7 @@ export default function LabTechnicianDashboard() {
   // Revenue from lab invoices
   const labRevenue = invoices ? invoices.filter(i =>
     i.description?.toLowerCase().includes('lab') ||
-    i.type === 'lab' ||
+    i.type === 'lab_test' ||
     i.items?.some((item: any) => item.type === 'lab_test')
   ).reduce((sum: number, i: any) => sum + (i.amount || 0), 0) : 0;
 
@@ -265,8 +265,8 @@ export default function LabTechnicianDashboard() {
                   const isExpanded = expandedId === report.id;
                   return (
                     <div key={report.id} className={`rounded-xl border p-4 ${hasCritical ? 'border-red-200 bg-red-50/20' : 'border-slate-200'}`}>
-                      <div className="flex items-center justify-between gap-4 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : report.id)}>
-                        <div className="flex items-center gap-3 flex-1">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1 cursor-pointer" onClick={() => setExpandedId(isExpanded ? null : report.id)}>
                           <div className="h-9 w-9 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
                             <CheckCircle className="h-5 w-5 text-emerald-600" />
                           </div>
@@ -284,7 +284,25 @@ export default function LabTechnicianDashboard() {
                             <p className="text-xs text-slate-400">Completed: {report.completedAt ? new Date(report.completedAt).toLocaleString() : 'N/A'}</p>
                           </div>
                         </div>
-                        {isExpanded ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronRight className="h-4 w-4 text-slate-400" />}
+                        <div className="flex items-center gap-2">
+                           <button 
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               const catalog = TEST_CATALOG.find(t => t.name === report.testType);
+                               generateServiceInvoice(
+                                 report.patientId, 
+                                 [{ description: `Lab Test: ${report.testType}`, quantity: 1, amount: catalog?.price || 0, taxRate: 18 }], 
+                                 'lab'
+                               );
+                             }}
+                             className="px-3 py-1.5 bg-slate-900 text-white text-[10px] font-black uppercase rounded-xl hover:bg-black transition-all shadow-sm"
+                           >
+                             Bill Test
+                           </button>
+                           <button onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : report.id); }} className="p-2 text-slate-400">
+                             {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                           </button>
+                        </div>
                       </div>
                       {isExpanded && report.results && (
                         <div className="mt-4 ml-12 bg-slate-50 rounded-xl p-4 text-sm border border-slate-200">

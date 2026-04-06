@@ -11,7 +11,7 @@ import {
 import toast from 'react-hot-toast';
 import { sendAppointmentConfirmationEmail, sendLabReportReadyEmail, sendPrescriptionReadyEmail } from '../services/emailService';
 
-export type Role = 'patient' | 'doctor' | 'admin' | 'receptionist' | 'pharmacist' | 'lab_technician';
+export type Role = 'patient' | 'doctor' | 'admin' | 'receptionist' | 'pharmacist' | 'lab_technician' | 'lab' | 'labtechnician';
 
 export interface BaseMetadata {
   createdAt: string;
@@ -25,16 +25,16 @@ export interface BaseMetadata {
 
 export interface AuditLog {
   id: string;
-  action: 'create' | 'update' | 'delete' | 'restore' | 'login' | 'logout';
-  collection: string;
-  docId: string;
-  performerId: string;
-  performerName: string;
-  performerRole: string;
+  action: string;
+  module: string;
+  targetId: string;
+  userId: string;
+  userName: string;
+  userRole: string;
   timestamp: string;
-  details?: string;
-  oldData?: any;
-  newData?: any;
+  details: string;
+  oldValue?: any;
+  newValue?: any;
 }
 
 export interface User extends Partial<BaseMetadata> {
@@ -54,7 +54,9 @@ export interface User extends Partial<BaseMetadata> {
   insuranceProvider?: string;
   insurancePolicyNumber?: string;
   departmentId?: string;
+  department?: string; // UI usage
   specialty?: string;
+  specialization?: string; // UI usage
   qualifications?: string;
   experienceYears?: number;
   consultationFee?: number;
@@ -79,6 +81,27 @@ export interface DoctorSchedule {
   isWorking?: boolean;
 }
 
+export interface PrescriptionItem {
+  medicationName: string;
+  dosage: string;
+  instructions: string;
+  duration: string;
+}
+
+export interface Prescription extends BaseMetadata {
+  id: string;
+  patientId: string;
+  doctorId: string;
+  appointmentId: string;
+  date: string;
+  items: PrescriptionItem[];
+  medications?: string; // Legacy/fallback support
+  status: 'pending' | 'dispensed';
+  dispensedBy?: string;
+  dispensedAt?: string;
+  notes?: string;
+}
+
 export interface Appointment extends BaseMetadata {
   id: string;
   patientId: string;
@@ -86,6 +109,7 @@ export interface Appointment extends BaseMetadata {
   departmentId: string;
   date: string;
   time: string;
+  checkInTime?: string; // UI usage
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show';
   reason: string;
   symptoms?: string;
@@ -140,8 +164,8 @@ export interface Prescription extends BaseMetadata {
 export interface InvoiceItem {
   id: string;
   description: string;
+  quantity: number;
   amount: number;
-  type: 'consultation' | 'lab_test' | 'medication' | 'procedure' | 'other';
   taxRate: number;
   taxAmount: number;
   hsnSacCode?: string;
@@ -149,19 +173,37 @@ export interface InvoiceItem {
 
 export interface Invoice extends BaseMetadata {
   id: string;
+  invoiceId: string;
   patientId: string;
+  patientName: string;
+  patientPhone: string;
   appointmentId?: string;
+  items: InvoiceItem[];
   amount: number;
   subtotal: number;
   totalTaxAmount: number;
+  totalAmount: number;
   date: string;
   dueDate: string;
-  status: 'paid' | 'unpaid' | 'partial' | 'cancelled';
+  status: 'pending' | 'paid' | 'unpaid' | 'cancelled' | 'partial';
   description?: string;
-  items: InvoiceItem[];
+  type: 'consultation' | 'lab_test' | 'medication' | 'procedure' | 'bed' | 'lab' | 'pharmacy' | 'other';
   paymentMethod?: 'cash' | 'card' | 'upi' | 'insurance';
   transactionId?: string;
   gstNumber?: string;
+}
+
+export interface PharmacyBill extends BaseMetadata {
+  id: string;
+  billId: string;
+  patientName: string;
+  patientPhone: string;
+  patientId: string;
+  medicines: PharmacyBillMedicine[];
+  totalAmount: number;
+  subtotal: number;
+  gst: number;
+  status: 'generated' | 'cancelled';
 }
 
 export interface LabRequest extends BaseMetadata {
@@ -210,6 +252,7 @@ export interface Bed extends BaseMetadata {
   status: 'available' | 'occupied' | 'maintenance' | 'reserved';
   patientId?: string;
   departmentId: string;
+  pricePerDay: number;
   notes?: string;
 }
 
@@ -222,6 +265,7 @@ export interface Equipment extends BaseMetadata {
   status: 'available' | 'in_use' | 'maintenance' | 'out_of_order';
   location: string;
   departmentId: string;
+  pricePerUse: number;
   lastMaintenanceDate?: string;
   nextMaintenanceDate?: string;
   notes?: string;
@@ -231,12 +275,12 @@ export interface BedBooking extends BaseMetadata {
   id: string;
   bedId: string;
   patientId: string;
-  doctorId: string;
   startDate: string;
   endDate?: string;
   status: 'active' | 'completed' | 'cancelled';
-  reason: string;
-  notes?: string;
+  totalCost?: number;
+  isBilled?: boolean;
+  billId?: string;
 }
 
 export interface EquipmentBooking extends BaseMetadata {
@@ -244,11 +288,13 @@ export interface EquipmentBooking extends BaseMetadata {
   equipmentId: string;
   patientId: string;
   doctorId: string;
-  startDate: string;
-  endDate?: string;
+  date: string;
+  startTime: string;
+  endTime?: string;
   status: 'active' | 'completed' | 'cancelled';
-  purpose: string;
-  notes?: string;
+  totalCost?: number;
+  isBilled?: boolean;
+  billId?: string;
 }
 
 export interface HospitalSettings {
@@ -272,6 +318,20 @@ export interface HospitalSettings {
     forcePasswordResetDays: number;
     twoFactorAuth: boolean;
   };
+  integrations?: {
+    apiKey: string;
+    hisConnector: {
+      status: 'connected' | 'disconnected' | 'error';
+      lastSync?: string;
+      endpoint?: string;
+    };
+    webhooks: {
+      id: string;
+      url: string;
+      events: string[];
+      active: boolean;
+    }[];
+  };
 }
 
 export interface InventoryItem extends BaseMetadata {
@@ -293,23 +353,13 @@ export interface PharmacyBillMedicine {
   total: number;
 }
 
-export interface PharmacyBill extends BaseMetadata {
-  id: string;
-  billId: string;
-  patientName: string;
-  patientId?: string;
-  medicines: PharmacyBillMedicine[];
-  subtotal: number;
-  gst: number;
-  totalAmount: number;
-  status: "generated";
-}
-
 export interface AdminInvoice extends BaseMetadata {
   id: string;
   billId: string;
   totalAmount: number;
-  department: "pharmacy";
+  department: 'pharmacy' | 'reception' | 'lab';
+  patientName: string;
+  timestamp: string;
 }
 
 interface AppContextType {
@@ -352,6 +402,8 @@ interface AppContextType {
   createAppointment: (data: Omit<Appointment, 'id'>) => Promise<void>;
   createLabReport: (data: Omit<LabReport, 'id'>) => Promise<void>;
   generateInvoice: (data: Omit<Invoice, 'id' | 'status' | 'amount' | 'subtotal' | 'totalTaxAmount' | keyof BaseMetadata> & { items: Omit<InvoiceItem, 'id' | 'taxAmount'>[] }) => Promise<void>;
+  generateServiceInvoice: (patientId: string, items: Omit<InvoiceItem, 'id' | 'taxAmount'>[], type: Invoice['type']) => Promise<void>;
+  findPatient: (id: string) => User | undefined;
   payInvoice: (id: string, method: Invoice['paymentMethod'], transactionId?: string) => Promise<void>;
   sendMessage: (data: Omit<Message, 'id' | 'timestamp' | 'read'>) => Promise<void>;
   markMessageRead: (id: string) => Promise<void>;
@@ -380,7 +432,7 @@ interface AppContextType {
   updateHospitalSettings: (data: Partial<HospitalSettings>) => Promise<void>;
   generatePharmacyBill: (billData: Omit<PharmacyBill, 'id' | 'billId' | 'status' | keyof BaseMetadata>) => Promise<void>;
   softDeleteDoc: (collectionName: string, id: string) => Promise<void>;
-  recordAuditLog: (action: AuditLog['action'], collectionName: string, docId: string, details?: string, oldData?: any, newData?: any) => Promise<void>;
+  recordAuditLog: (action: string, module: string, targetId: string, details: string, oldValue?: any, newValue?: any) => Promise<void>;
   withCreateMetadata: (data: any) => any;
   withUpdateMetadata: (data: any) => any;
 }
@@ -410,7 +462,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  const withCreateMetadata = (data: any) => {
+  const findPatient = (id: string) => users.find(u => u.id === id);
+
+  const withCreateMetadata = <T extends object>(data: T) => {
     const timestamp = new Date().toISOString();
     return {
       ...data,
@@ -422,7 +476,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
-  const withUpdateMetadata = (data: any) => {
+  const withUpdateMetadata = <T extends object>(data: T) => {
     return {
       ...data,
       updatedAt: new Date().toISOString(),
@@ -430,30 +484,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
   };
 
-  const recordAuditLog = async (
-    action: AuditLog['action'],
-    collectionName: string,
-    docId: string,
-    details?: string,
-    oldData?: any,
-    newData?: any
-  ) => {
+  const recordAuditLog = async (action: string, module: string, targetId: string, details: string, oldValue: any = null, newValue: any = null) => {
+    if (!currentUser) return;
     try {
       const logRef = doc(collection(db, 'auditLogs'));
-      const log: AuditLog = {
+      const logData = {
         id: logRef.id,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        userRole: currentUser.role,
         action,
-        collection: collectionName,
-        docId,
-        performerId: currentUser?.id || 'system',
-        performerName: currentUser?.name || 'System Auto',
-        performerRole: currentUser?.role || 'system',
-        timestamp: new Date().toISOString(),
+        module,
+        targetId,
         details,
-        oldData: oldData ? JSON.parse(JSON.stringify(oldData)) : null,
-        newData: newData ? JSON.parse(JSON.stringify(newData)) : null,
+        timestamp: new Date().toISOString()
       };
-      await setDoc(logRef, log);
+      await setDoc(logRef, logData);
     } catch (err) {
       console.error('Audit Log failed:', err);
     }
@@ -496,39 +542,54 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
-    });
-    const unsubDepts = onSnapshot(collection(db, 'departments'), (snapshot) => {
-      setDepartments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Department)));
-    });
-    return () => { unsubUsers(); unsubDepts(); };
-  }, []);
 
   useEffect(() => {
     if (!isAuthReady || !currentUser) return;
 
-    const queryOptions = where('deleted', '!=', true);
+    const isStaff = ['admin', 'doctor', 'receptionist', 'pharmacist', 'lab_technician', 'lab'].includes(currentUser.role);
+    const isAdmin = currentUser.role === 'admin';
 
     const subs = [
-      onSnapshot(collection(db, 'doctorSchedules'), snap => setDoctorSchedules(snap.docs.map(d => ({ id: d.id, ...d.data() } as DoctorSchedule)))),
-      onSnapshot(query(collection(db, 'appointments'), queryOptions), snap => setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Appointment)))),
-      onSnapshot(query(collection(db, 'medicalRecords'), queryOptions), snap => setMedicalRecords(snap.docs.map(d => ({ id: d.id, ...d.data() } as MedicalRecord)))),
-      onSnapshot(query(collection(db, 'prescriptions'), queryOptions), snap => setPrescriptions(snap.docs.map(d => ({ id: d.id, ...d.data() } as Prescription)))),
-      onSnapshot(query(collection(db, 'invoices'), queryOptions), snap => setInvoices(snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice)))),
-      onSnapshot(query(collection(db, 'labRequests'), queryOptions), snap => setLabRequests(snap.docs.map(d => ({ id: d.id, ...d.data() } as LabRequest)))),
-      onSnapshot(query(collection(db, 'labReports'), queryOptions), snap => setLabReports(snap.docs.map(d => ({ id: d.id, ...d.data() } as LabReport)))),
-      onSnapshot(collection(db, 'messages'), snap => setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() } as Message)))),
-      onSnapshot(query(collection(db, 'beds'), queryOptions), snap => setBeds(snap.docs.map(d => ({ id: d.id, ...d.data() } as Bed)))),
-      onSnapshot(query(collection(db, 'equipment'), queryOptions), snap => setEquipment(snap.docs.map(d => ({ id: d.id, ...d.data() } as Equipment)))),
-      onSnapshot(query(collection(db, 'bedBookings'), queryOptions), snap => setBedBookings(snap.docs.map(d => ({ id: d.id, ...d.data() } as BedBooking)))),
-      onSnapshot(query(collection(db, 'equipmentBookings'), queryOptions), snap => setEquipmentBookings(snap.docs.map(d => ({ id: d.id, ...d.data() } as EquipmentBooking)))),
-      onSnapshot(query(collection(db, 'inventory'), queryOptions), snap => setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)))),
-      onSnapshot(query(collection(db, 'auditLogs')), snap => setAuditLogs(snap.docs.map(d => ({ id: d.id, ...d.data() } as AuditLog))), error => console.warn('Audit logs permission issue:', error)),
-      onSnapshot(doc(db, 'settings', 'general'), snap => {
-        if (snap.exists()) setHospitalSettings(snap.data() as HospitalSettings);
-      })
+      onSnapshot(collection(db, 'departments'), snap => setDepartments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Department)))),
+      
+      ...(isAdmin ? [
+        onSnapshot(collection(db, 'users'), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User)))),
+        onSnapshot(collection(db, 'auditLogs'), snap => setAuditLogs(snap.docs.map(d => ({ id: d.id, ...d.data() } as AuditLog)))),
+        onSnapshot(collection(db, 'invoices'), snap => setInvoices(snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice)))),
+        onSnapshot(collection(db, 'adminInvoices'), snap => setAdminInvoices(snap.docs.map(d => ({ id: d.id, ...d.data() } as any)))),
+      ] : [
+        ...(isStaff ? [onSnapshot(collection(db, 'users'), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User))))] : []),
+        ...(!isStaff ? [onSnapshot(query(collection(db, 'users'), where('id', '==', currentUser.id)), snap => setUsers(snap.docs.map(d => ({ id: d.id, ...d.data() } as User))))] : [])
+      ]),
+
+      onSnapshot(isAdmin || isStaff ? collection(db, 'appointments') : query(collection(db, 'appointments'), where('patientId', '==', currentUser.id)), 
+        snap => setAppointments(snap.docs.map(d => ({ id: d.id, ...d.data() } as Appointment)))),
+
+      onSnapshot(isAdmin || isStaff ? collection(db, 'medicalRecords') : query(collection(db, 'medicalRecords'), where('patientId', '==', currentUser.id)), 
+        snap => setMedicalRecords(snap.docs.map(d => ({ id: d.id, ...d.data() } as MedicalRecord)))),
+      onSnapshot(isAdmin || isStaff ? collection(db, 'prescriptions') : query(collection(db, 'prescriptions'), where('patientId', '==', currentUser.id)), 
+        snap => setPrescriptions(snap.docs.map(d => ({ id: d.id, ...d.data() } as Prescription)))),
+
+      onSnapshot(isAdmin || isStaff ? collection(db, 'labRequests') : query(collection(db, 'labRequests'), where('patientId', '==', currentUser.id)), 
+        snap => setLabRequests(snap.docs.map(d => ({ id: d.id, ...d.data() } as LabRequest)))),
+      onSnapshot(isAdmin || isStaff ? collection(db, 'labReports') : query(collection(db, 'labReports'), where('patientId', '==', currentUser.id)), 
+        snap => setLabReports(snap.docs.map(d => ({ id: d.id, ...d.data() } as LabReport)))),
+
+      onSnapshot(isAdmin || ['pharmacist', 'receptionist'].includes(currentUser.role) ? collection(db, 'bills') : query(collection(db, 'bills'), where('patientId', '==', currentUser.id)), 
+        snap => setBills(snap.docs.map(d => ({ id: d.id, ...d.data() } as PharmacyBill)))),
+      
+      onSnapshot(isAdmin || isStaff ? collection(db, 'invoices') : query(collection(db, 'invoices'), where('patientId', '==', currentUser.id)), 
+        snap => setInvoices(snap.docs.map(d => ({ id: d.id, ...d.data() } as Invoice)))),
+
+      onSnapshot(isAdmin || currentUser.role === 'pharmacist' ? collection(db, 'inventory') : query(collection(db, 'inventory'), where('deleted', '==', false)), 
+        snap => setInventory(snap.docs.map(d => ({ id: d.id, ...d.data() } as InventoryItem)))),
+
+      onSnapshot(collection(db, 'beds'), snap => setBeds(snap.docs.map(d => ({ id: d.id, ...d.data() } as Bed)))),
+      onSnapshot(collection(db, 'equipment'), snap => setEquipment(snap.docs.map(d => ({ id: d.id, ...d.data() } as Equipment)))),
+      onSnapshot(collection(db, 'bedBookings'), snap => setBedBookings(snap.docs.map(d => ({ id: d.id, ...d.data() } as BedBooking)))),
+      onSnapshot(collection(db, 'equipmentBookings'), snap => setEquipmentBookings(snap.docs.map(d => ({ id: d.id, ...d.data() } as EquipmentBooking)))),
+
+      onSnapshot(doc(db, 'settings', 'general'), doc => doc.exists() && setHospitalSettings(doc.data() as HospitalSettings)),
     ];
 
     return () => subs.forEach(unsub => unsub());
@@ -536,7 +597,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password?: string, role?: Role) => {
     try {
-      const normalizedRole = role === 'labtechnician' ? 'lab_technician' : role;
+      const fixLabRole = (role: string): Role => {
+        if (role === 'lab' || role === 'labtechnician' || role === 'lab_technician') return 'lab_technician';
+        return role as Role;
+      };
+      const normalizedRole = role ? fixLabRole(role) : undefined;
       const result = await signInWithEmailAndPassword(auth, email, password || '123456');
       const user = result.user;
       const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -841,6 +906,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const book = withCreateMetadata({ id: ref.id, ...data, status: 'active' });
     await setDoc(ref, book);
     await updateDoc(doc(db, 'beds', data.bedId), { status: 'occupied', patientId: data.patientId });
+    await recordAuditLog('create', 'clinical', data.bedId, `Booked bed ${data.bedId} for patient ${data.patientId}`);
   };
 
   const updateBedBooking = async (id: string, data: Partial<BedBooking>) => {
@@ -856,6 +922,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const book = withCreateMetadata({ id: ref.id, ...data, status: 'active' });
     await setDoc(ref, book);
     await updateDoc(doc(db, 'equipment', data.equipmentId), { status: 'in_use' });
+    await recordAuditLog('create', 'clinical', data.equipmentId, `Booked equipment ${data.equipmentId} for patient ${data.patientId}`);
   };
 
   const updateEquipmentBooking = async (id: string, data: Partial<EquipmentBooking>) => {
@@ -908,21 +975,112 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const generatePharmacyBill = async (data: Omit<PharmacyBill, 'id' | 'billId' | 'status' | keyof BaseMetadata>) => {
     if (!currentUser) throw new Error('Not logged in');
-    const billRef = doc(collection(db, 'bills'));
-    const billId = `BILL-${Date.now()}`;
-    const bill = withCreateMetadata({ id: billRef.id, billId, ...data, status: 'generated' });
-    await runTransaction(db, async (tx) => {
-      tx.set(billRef, bill);
-      const invRef = doc(collection(db, 'adminInvoices'));
-      tx.set(invRef, withCreateMetadata({ id: invRef.id, billId: billRef.id, totalAmount: data.totalAmount, department: 'pharmacy' }));
-    });
-    toast.success('Bill generated');
+    try {
+      let finalPatientId = data.patientId;
+      const patient = findPatient(data.patientId);
+
+      // Auto-register walk-in if name and phone are provided and they don't exist
+      if (!patient && data.patientName && data.patientPhone) {
+        const existingByPhone = users.find(u => u.phone === data.patientPhone && u.role === 'patient');
+        if (existingByPhone) {
+          finalPatientId = existingByPhone.id;
+        } else {
+          // Create a more permanent record for the pharmacy history
+          const newPatient = await createWalkInPatient({ 
+            name: data.patientName, 
+            phone: data.patientPhone,
+            status: 'active'
+          });
+          finalPatientId = newPatient.id;
+        }
+      }
+
+      const billRef = doc(collection(db, 'bills'));
+      const billId = `BILL-${Date.now()}`;
+      const finalPatient = users.find(u => u.id === finalPatientId);
+
+      const bill = withCreateMetadata({ 
+        id: billRef.id, 
+        billId, 
+        ...data, 
+        patientId: finalPatientId, // Use the real ID
+        patientName: data.patientName || finalPatient?.name || 'Walk-in Patient',
+        patientPhone: data.patientPhone || finalPatient?.phone || '',
+        status: 'generated' 
+      });
+      await runTransaction(db, async (tx) => {
+        tx.set(billRef, bill);
+        const invRef = doc(collection(db, 'adminInvoices'));
+        tx.set(invRef, withCreateMetadata({ 
+          id: invRef.id, 
+          billId: billRef.id, 
+          totalAmount: data.totalAmount, 
+          department: 'pharmacy',
+          patientName: bill.patientName,
+          timestamp: new Date().toISOString()
+        }));
+      });
+      await recordAuditLog('create', 'pharmacy', billRef.id, `Generated pharmacy bill ${billId} for ${bill.patientName}`);
+      toast.success('Bill generated');
+    } catch (err: any) {
+      console.error('Billing error:', err);
+      toast.error(`Billing failed: ${err.message}`);
+    }
+  };
+
+  const generateServiceInvoice = async (patientId: string, items: Omit<InvoiceItem, 'id' | 'taxAmount'>[], type: Invoice['type']) => {
+    if (!currentUser) throw new Error('Not logged in');
+    try {
+      const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+      const invoiceItems = items.map(item => ({
+        ...item,
+        id: `it-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        taxAmount: (item.amount * item.taxRate) / 100
+      }));
+      const totalTaxAmount = invoiceItems.reduce((sum, item) => sum + item.taxAmount, 0);
+      
+      const patient = findPatient(patientId);
+      const invoiceId = `INV-${Date.now()}`;
+      const invRef = doc(collection(db, 'invoices'));
+      const inv = withCreateMetadata({
+        id: invRef.id,
+        invoiceId,
+        patientId,
+        patientName: patient?.name || 'Patient',
+        patientPhone: patient?.phone || '',
+        type,
+        items: invoiceItems,
+        subtotal,
+        totalTaxAmount,
+        totalAmount: subtotal + totalTaxAmount,
+        status: 'pending',
+        date: new Date().toISOString().split('T')[0]
+      });
+      
+      await runTransaction(db, async (tx) => {
+        tx.set(invRef, inv);
+        const adminInvRef = doc(collection(db, 'adminInvoices'));
+        tx.set(adminInvRef, withCreateMetadata({
+          id: adminInvRef.id,
+          billId: invRef.id,
+          totalAmount: inv.totalAmount,
+          department: type === 'bed' ? 'reception' : type === 'lab' ? 'lab' : 'reception',
+          patientName: inv.patientName,
+          timestamp: new Date().toISOString()
+        }));
+      });
+
+      await recordAuditLog('create', 'finance', invRef.id, `Generated ${type} invoice ${invoiceId} for ${inv.patientName}`);
+      toast.success('Invoice generated');
+    } catch (err: any) {
+      toast.error(`Invoice generation failed: ${err.message}`);
+    }
   };
 
   return (
     <AppContext.Provider value={{
       currentUser, users, departments, doctorSchedules, appointments, medicalRecords, prescriptions, invoices, labRequests, labReports, messages, beds, equipment, bedBookings, equipmentBookings, inventory, bills, adminInvoices, hospitalSettings, auditLogs, isAuthReady,
-      login, logout, registerPatient, createWalkInPatient, bookAppointment, updateAppointmentStatus, addMedicalRecord, addPrescription, dispensePrescription, updatePrescriptionStatus, addDoctor, addReceptionist, addPharmacist, addLabTechnician, addDepartment, createAppointment, createLabReport, generateInvoice, payInvoice, sendMessage, markMessageRead, requestLabTest, addLabReport, updateLabReportStatus, createAdminUser, updateAdminUser, deleteUser, updateDoctorSchedule, addBed, updateBed, deleteBed, addEquipment, updateEquipment, deleteEquipment, bookBed, updateBedBooking, bookEquipment, updateEquipmentBooking, uploadAvatar, uploadLabReport, addInventoryItem, updateInventoryItem, deleteInventoryItem, updateHospitalSettings, generatePharmacyBill, softDeleteDoc, recordAuditLog, withCreateMetadata, withUpdateMetadata
+      login, logout, registerPatient, createWalkInPatient, bookAppointment, updateAppointmentStatus, addMedicalRecord, addPrescription, dispensePrescription, updatePrescriptionStatus, addDoctor, addReceptionist, addPharmacist, addLabTechnician, addDepartment, createAppointment, createLabReport, generateInvoice, generateServiceInvoice, findPatient, payInvoice, sendMessage, markMessageRead, requestLabTest, addLabReport, updateLabReportStatus, createAdminUser, updateAdminUser, deleteUser, updateDoctorSchedule, addBed, updateBed, deleteBed, addEquipment, updateEquipment, deleteEquipment, bookBed, updateBedBooking, bookEquipment, updateEquipmentBooking, uploadAvatar, uploadLabReport, addInventoryItem, updateInventoryItem, deleteInventoryItem, updateHospitalSettings, generatePharmacyBill, softDeleteDoc, recordAuditLog, withCreateMetadata, withUpdateMetadata
     }}>
       {children}
     </AppContext.Provider>

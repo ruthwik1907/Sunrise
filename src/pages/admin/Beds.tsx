@@ -12,6 +12,7 @@ export default function AdminBeds() {
     bedNumber: '',
     type: 'general' as const,
     departmentId: '',
+    pricePerDay: 500,
     notes: ''
   });
 
@@ -41,6 +42,7 @@ export default function AdminBeds() {
       bedNumber: bed.bedNumber,
       type: bed.type,
       departmentId: bed.departmentId,
+      pricePerDay: bed.pricePerDay || 500,
       notes: bed.notes || ''
     });
     setShowModal(true);
@@ -241,7 +243,7 @@ export default function AdminBeds() {
                 onClick={() => {
                   setShowModal(false);
                   setEditingBed(null);
-                  setFormData({ roomNumber: '', bedNumber: '', type: 'general', departmentId: '', notes: '' });
+                  setFormData({ roomNumber: '', bedNumber: '', type: 'general', departmentId: '', pricePerDay: 500, notes: '' });
                 }}
                 className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
               >
@@ -302,6 +304,17 @@ export default function AdminBeds() {
                 </select>
               </div>
               <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Price Per Day (₹)</label>
+                <input
+                  type="number"
+                  required
+                  value={formData.pricePerDay}
+                  onChange={(e) => setFormData({ ...formData, pricePerDay: parseInt(e.target.value) || 0 })}
+                  className="block w-full border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="500"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Notes (Optional)</label>
                 <textarea
                   rows={3}
@@ -317,7 +330,7 @@ export default function AdminBeds() {
                   onClick={() => {
                     setShowModal(false);
                     setEditingBed(null);
-                    setFormData({ roomNumber: '', bedNumber: '', type: 'general', departmentId: '', notes: '' });
+                    setFormData({ roomNumber: '', bedNumber: '', type: 'general', departmentId: '', pricePerDay: 500, notes: '' });
                   }}
                   className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
                 >

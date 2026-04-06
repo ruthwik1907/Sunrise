@@ -171,6 +171,48 @@
         "read": { "type": "boolean" }
       },
       "required": ["senderId", "receiverId", "content", "timestamp", "read"]
+    },
+    "Bed": {
+      "title": "Bed",
+      "description": "Hospital bed",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "number": { "type": "string" },
+        "departmentId": { "type": "string" },
+        "status": { "type": "string", "enum": ["available", "occupied", "maintenance"] },
+        "type": { "type": "string" },
+        "patientId": { "type": "string" }
+      },
+      "required": ["number", "departmentId", "status"]
+    },
+    "Equipment": {
+      "title": "Equipment",
+      "description": "Clinical equipment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "departmentId": { "type": "string" },
+        "status": { "type": "string", "enum": ["available", "in_use", "maintenance"] },
+        "condition": { "type": "string" }
+      },
+      "required": ["name", "departmentId", "status"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "System activity log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "action": { "type": "string" },
+        "collection": { "type": "string" },
+        "documentId": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["userId", "action", "collection", "timestamp"]
     }
   },
   "firestore": {
@@ -213,6 +255,18 @@
     "messages": {
       "schema": { "$ref": "#/entities/Message" },
       "description": "Collection of messages"
+    },
+    "beds": {
+      "schema": { "$ref": "#/entities/Bed" },
+      "description": "Collection of hospital beds"
+    },
+    "equipment": {
+      "schema": { "$ref": "#/entities/Equipment" },
+      "description": "Collection of hospital equipment"
+    },
+    "auditLogs": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Collection of audit logs"
     }
   }
 }

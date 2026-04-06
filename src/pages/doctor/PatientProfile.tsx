@@ -180,10 +180,8 @@ export default function DoctorPatientProfile() {
       await bookBed({
         bedId: bedBookingData.bedId,
         patientId: patient.id,
-        doctorId: currentUser.id,
         startDate: bedBookingData.startDate,
-        endDate: bedBookingData.endDate,
-        reason: bedBookingData.reason,
+        endDate: bedBookingData.endDate || '',
         status: 'active'
       });
       setShowBedBookingModal(false);
@@ -201,9 +199,8 @@ export default function DoctorPatientProfile() {
         equipmentId: equipmentBookingData.equipmentId,
         patientId: patient.id,
         doctorId: currentUser.id,
-        startDate: equipmentBookingData.startDate,
-        endDate: equipmentBookingData.endDate,
-        purpose: equipmentBookingData.purpose,
+        date: equipmentBookingData.startDate,
+        startTime: '09:00', // Default start time
         status: 'active'
       });
       setShowEquipmentBookingModal(false);

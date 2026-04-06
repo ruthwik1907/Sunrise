@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppContext, Role } from '../../context/AppContext';
 import { Activity, Mail, Lock, ArrowRight, ShieldCheck, UserCircle, Stethoscope, Loader2, Pill, Users, TestTube } from 'lucide-react';
@@ -29,14 +29,15 @@ export default function Login() {
       toast.success('Successfully logged in!');
       
       // Map role to route path
-      const roleToRoute = {
+      const roleToRoute: Record<string, string> = {
         patient: '/patient',
         doctor: '/doctor',
         admin: '/admin',
         pharmacist: '/pharmacist',
         receptionist: '/receptionist',
         lab_technician: '/labtechnician',
-        labtechnician: '/labtechnician'
+        labtechnician: '/labtechnician',
+        lab: '/labtechnician'
       };
       
       if (redirectTo) {

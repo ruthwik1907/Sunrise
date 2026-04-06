@@ -18,6 +18,8 @@ export default function PatientDashboard() {
   const unpaidInvoices = myInvoices.filter(i => i.status === 'unpaid');
   const myLabReports = labReports.filter(l => l.patientId === currentUser.id);
   const pendingLabReports = myLabReports.filter(l => l.status === 'pending');
+  const lastPrescription = [...myPrescriptions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+  const lastRecord = [...myLabReports].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
   const downloadPrescriptionPDF = (rx: any) => {
     try {
@@ -98,7 +100,7 @@ export default function PatientDashboard() {
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Prescriptions</p>
-            <p className="text-2xl font-bold text-slate-900">{myPrescriptions.length}</p>
+            <p className="text-2xl font-bold text-slate-900">{lastPrescription?.date ? new Date(lastPrescription.date).toLocaleDateString() : '—'}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4 hover:shadow-md transition-shadow">
@@ -157,7 +159,7 @@ export default function PatientDashboard() {
                     <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-6 text-sm text-slate-600 border border-slate-200">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-slate-400" />
-                        <span className="font-medium">{new Date(apt.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                        <span className="font-medium">{apt.date ? new Date(apt.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-slate-400" />
@@ -200,7 +202,8 @@ export default function PatientDashboard() {
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <p className="font-semibold text-slate-900">Prescribed by Dr. {doctor?.name || 'Unknown Doctor'}</p>
-                          <p className="text-xs text-slate-500 mt-0.5">{new Date(rx.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                          <p className="text-2xl font-bold text-slate-900">{lastRecord?.date ? new Date(lastRecord.date).toLocaleDateString() : '—'}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{rx.date ? new Date(rx.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -385,8 +388,8 @@ export default function PatientDashboard() {
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-slate-500">
-                    <span>From: {new Date(booking.startDate).toLocaleDateString()}</span>
-                    <span>To: {new Date(booking.endDate).toLocaleDateString()}</span>
+                    <span>From: {booking.startDate ? new Date(booking.startDate).toLocaleDateString() : '—'}</span>
+                    <span>To: {booking.endDate ? new Date(booking.endDate).toLocaleDateString() : '—'}</span>
                   </div>
                 </div>
               );
@@ -410,8 +413,8 @@ export default function PatientDashboard() {
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-slate-500">
-                    <span>From: {new Date(booking.startDate).toLocaleDateString()}</span>
-                    <span>To: {new Date(booking.endDate).toLocaleDateString()}</span>
+                    <span>From: {booking.startDate ? new Date(booking.startDate).toLocaleDateString() : '—'}</span>
+                    <span>To: {booking.endDate ? new Date(booking.endDate).toLocaleDateString() : '—'}</span>
                   </div>
                 </div>
               );

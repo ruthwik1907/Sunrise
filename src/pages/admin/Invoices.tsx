@@ -36,7 +36,7 @@ export default function AdminInvoices() {
       totalTaxAmount: bill.totalAmount - bill.subtotal,
       status: 'paid' as const, // Pharmacy bills are considered paid upon generation in this system
       description: `Pharmacy Bill: ${bill.billId}`,
-      items: bill.medicines.map((m, idx) => ({
+      items: bill.medicines.map((m: any, idx: number) => ({
         id: `m-${idx}`,
         description: m.name,
         amount: m.price * m.quantity,
@@ -44,6 +44,8 @@ export default function AdminInvoices() {
         taxRate: bill.gst,
         taxAmount: (m.price * m.quantity * bill.gst) / 100
       })),
+      paymentMethod: 'upi' as const, // Default for pharmacy bills in this system
+      transactionId: bill.billId,
       _source: 'bill',
       billId: bill.billId
     }))
